@@ -1,9 +1,17 @@
+"use client";
+
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
 import { Features } from "@/components/features";
 import { Toaster } from "@/components/sonner";
+import { motion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useRef } from "react";
 
 export default function LandingPage() {
+  const ctaRef = useRef(null);
+  const ctaInView = useInView(ctaRef, { once: true, margin: "-100px" });
+
   return (
     <main className="min-h-screen">
       <Navbar />
@@ -11,13 +19,26 @@ export default function LandingPage() {
       <Features />
 
       {/* "Ready" Section inspired by Brillance */}
-      <section className="py-32 px-4 border-t border-border/50 bg-gradient-to-b from-background to-card/20">
+      <section
+        ref={ctaRef}
+        className="py-32 px-4 border-t border-border/50 bg-linear-to-b from-background to-card/20"
+      >
         <div className="max-w-4xl mx-auto text-center space-y-12">
-          <h2 className="text-5xl md:text-8xl leading-tight">
+          <motion.h2
+            initial={{ opacity: 0, y: 50 }}
+            animate={ctaInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl md:text-8xl leading-tight"
+          >
             Ready to reclaim <br />
             <span className="italic text-accent">your flow?</span>
-          </h2>
-          <div className="flex flex-col items-center gap-6">
+          </motion.h2>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={ctaInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col items-center gap-6"
+          >
             <p className="text-muted-foreground text-xl max-w-lg mx-auto">
               Join hundreds of engineering teams eliminating context switching
               with Continuum.
@@ -30,12 +51,18 @@ export default function LandingPage() {
                 Limited beta slots available each month
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       <footer className="py-20 px-4 border-t border-border bg-card/10">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12"
+        >
           <div className="space-y-6">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-accent rounded-full" />
@@ -116,14 +143,20 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-        </div>
-        <div className="max-w-6xl mx-auto pt-20 flex flex-col md:flex-row justify-between text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] gap-4">
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="max-w-6xl mx-auto pt-20 flex flex-col md:flex-row justify-between text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] gap-4"
+        >
           <p>© 2026 Continuum Intelligence Inc.</p>
           <div className="flex gap-8">
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>
           </div>
-        </div>
+        </motion.div>
       </footer>
       <Toaster position="top-center" theme="dark" />
     </main>
