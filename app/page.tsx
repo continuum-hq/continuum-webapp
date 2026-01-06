@@ -21,6 +21,7 @@ export default function LandingPage() {
       {/* "Ready" Section inspired by Brillance */}
       <section
         ref={ctaRef}
+        id="get-started"
         className="py-32 px-4 border-t border-border/50 bg-linear-to-b from-background to-card/20"
       >
         <div className="max-w-4xl mx-auto text-center space-y-12">
@@ -44,7 +45,18 @@ export default function LandingPage() {
               with Continuum.
             </p>
             <div className="w-full max-w-md">
-              <button className="w-full py-4 px-8 bg-foreground text-background rounded-full font-serif text-2xl font-medium hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl shadow-white/5">
+              <button
+                onClick={() => {
+                  const waitlistElement = document.getElementById("waitlist");
+                  if (waitlistElement) {
+                    waitlistElement.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }
+                }}
+                className="w-full py-4 px-8 bg-foreground text-background rounded-full font-serif text-2xl font-medium hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl shadow-white/5"
+              >
                 Reserve your spot
               </button>
               <p className="mt-4 text-xs text-muted-foreground/60 uppercase tracking-[0.2em]">
@@ -65,7 +77,7 @@ export default function LandingPage() {
         >
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 bg-accent rounded-full" />
+              {/* <div className="w-5 h-5 bg-accent rounded-full" /> */}
               <span className="font-serif text-xl font-bold tracking-tight">
                 Continuum
               </span>
@@ -82,19 +94,46 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("features");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
                     Features
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("features");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
                     Integrations
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
-                    Roadmap
-                  </a>
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("get-started");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
+                    Get Started
+                  </button>
                 </li>
               </ul>
             </div>
@@ -104,19 +143,46 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("features");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
                     About
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("get-started");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
                     Careers
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("waitlist");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
                     Contact
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -126,17 +192,29 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <a
+                    href="https://x.com/avyukt_soni"
+                    className="hover:text-accent transition-colors"
+                    target="_blank"
+                  >
                     Twitter
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <a
+                    href="https://github.com/avyuktsoni0731"
+                    className="hover:text-accent transition-colors"
+                    target="_blank"
+                  >
                     GitHub
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-accent transition-colors">
+                  <a
+                    href="https://www.linkedin.com/in/avyuktsoni0731/"
+                    className="hover:text-accent transition-colors"
+                    target="_blank"
+                  >
                     LinkedIn
                   </a>
                 </li>
@@ -151,7 +229,7 @@ export default function LandingPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="max-w-6xl mx-auto pt-20 flex flex-col md:flex-row justify-between text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] gap-4"
         >
-          <p>© 2026 Continuum Intelligence Inc.</p>
+          <p>© 2026 Continuum</p>
           <div className="flex gap-8">
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>
