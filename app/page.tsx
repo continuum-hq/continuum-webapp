@@ -21,6 +21,7 @@ export default function LandingPage() {
       {/* "Ready" Section inspired by Brillance */}
       <section
         ref={ctaRef}
+        id="get-started"
         className="py-32 px-4 border-t border-border/50 bg-linear-to-b from-background to-card/20"
       >
         <div className="max-w-4xl mx-auto text-center space-y-12">
@@ -44,7 +45,18 @@ export default function LandingPage() {
               with Continuum.
             </p>
             <div className="w-full max-w-md">
-              <button className="w-full py-4 px-8 bg-foreground text-background rounded-full font-serif text-2xl font-medium hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl shadow-white/5">
+              <button
+                onClick={() => {
+                  const waitlistElement = document.getElementById("waitlist");
+                  if (waitlistElement) {
+                    waitlistElement.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }
+                }}
+                className="w-full py-4 px-8 bg-foreground text-background rounded-full font-serif text-2xl font-medium hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl shadow-white/5"
+              >
                 Reserve your spot
               </button>
               <p className="mt-4 text-xs text-muted-foreground/60 uppercase tracking-[0.2em]">

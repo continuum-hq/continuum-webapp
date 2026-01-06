@@ -53,6 +53,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
           className="max-w-md mx-auto pt-4"
+          id="waitlist"
         >
           <WaitlistForm />
         </motion.div>
