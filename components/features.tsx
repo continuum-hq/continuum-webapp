@@ -2,7 +2,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import {
-  Calendar,
   Github,
   Database,
   MessageSquare,
@@ -13,6 +12,7 @@ import {
   Workflow,
   ShieldCheck,
   GitBranch,
+  Plug2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
@@ -76,7 +76,7 @@ export function Features() {
               <p className="text-muted-foreground text-base md:text-lg max-w-md">
                 Ask "who should I assign this PR to?" and get intelligent
                 suggestions based on code expertise, current workload, review
-                quality history, and timezone availability.
+                quality history, and availability.
               </p>
             </div>
           </motion.div>
@@ -114,8 +114,8 @@ export function Features() {
               <h3 className="text-2xl font-serif">Multi-Step Orchestration</h3>
               <p className="text-sm text-muted-foreground">
                 Execute complex workflows in one command: "Check availability
-                for @sarah, assign her to KAN-123, and schedule a sync meeting
-                tomorrow at 2pm."
+                for @sarah, assign her to KAN-123, and notify the team in
+                Slack."
               </p>
             </div>
           </motion.div>
@@ -137,16 +137,17 @@ export function Features() {
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#0052CC] border border-border flex items-center justify-center p-2 md:p-3 shadow-xl">
                 <Database className="w-full h-full text-white" />
               </div>
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#EA4335] border border-border flex items-center justify-center p-2 md:p-3 shadow-xl">
-                <Calendar className="w-full h-full text-white" />
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#6366F1] border border-border flex items-center justify-center p-2 md:p-3 shadow-xl">
+                <Plug2 className="w-full h-full text-white" />
               </div>
             </div>
 
             <div className="space-y-3 md:space-y-4 relative z-10">
               <h3 className="text-3xl md:text-4xl">Multi-Tool Synergy</h3>
               <p className="text-muted-foreground text-base md:text-lg max-w-md">
-                Ask about a Jira task, see the linked GitHub PR, and check your
-                availability for a review—all in a single Slack thread.
+                Connect the platforms your team already uses. Ask about tasks,
+                see linked PRs, check statuses, and get answers—all in a single
+                Slack thread.
               </p>
             </div>
           </motion.div>
