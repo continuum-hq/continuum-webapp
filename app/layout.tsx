@@ -17,9 +17,13 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Continuum| Unified Intelligence for Teams",
+  title: "Continuum | Unified Intelligence for Teams",
   description:
     "Eliminate context switching with an intelligent productivity agent that unifies Jira, GitHub, and other dev tools in Slack.",
+  icons: {
+    icon: "/Continuum_Logo.png",
+    apple: "/Continuum_Logo.png",
+  },
 };
 
 export default function RootLayout({
