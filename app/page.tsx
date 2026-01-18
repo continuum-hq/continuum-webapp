@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
 import { Features } from "@/components/features";
-import { TwitterVideo } from "@/components/twitter-video";
+import { Video } from "@/components/video";
 import { Toaster } from "@/components/sonner";
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
@@ -49,8 +49,11 @@ export default function LandingPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex justify-center"
           >
-            <div className="w-full max-w-2xl">
-              <TwitterVideo />
+            <div className="w-full max-w-4xl">
+              <Video
+                videoUrl={process.env.NEXT_PUBLIC_CDN_DOMAIN ? `${process.env.NEXT_PUBLIC_CDN_DOMAIN}/videos/continuum-multi-tool-orchestration.mp4` : undefined}
+                posterUrl={process.env.NEXT_PUBLIC_VIDEO_POSTER_URL}
+              />
             </div>
           </motion.div>
 
