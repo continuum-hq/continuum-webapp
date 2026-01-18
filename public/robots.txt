@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://continuum.app/sitemap.xml
+
+# Disallow admin/internal pages
+Disallow: /api/
+Disallow: /install/success
