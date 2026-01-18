@@ -1,0 +1,138 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+
+export default function QuickStartPage() {
+  return (
+    <article className="prose prose-invert max-w-none">
+      <h1>Get Started in 5 Minutes</h1>
+      <p className="text-xl text-muted-foreground">
+        Follow these steps to get Continuum up and running:
+      </p>
+
+      <div className="space-y-8 mt-8">
+        <section>
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">
+              1
+            </div>
+            <div className="flex-1">
+              <h2>Install Continuum (2 minutes)</h2>
+              <ol className="mt-2 space-y-2">
+                <li>Visit the <a href="/install" className="text-accent hover:underline">Continuum install page</a></li>
+                <li>Click <strong>"Add to Slack"</strong> button</li>
+                <li>Select your Slack workspace</li>
+                <li>Review and authorize permissions</li>
+                <li>You'll be redirected to the setup page</li>
+              </ol>
+              <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+                <p className="font-medium mb-2">What happens:</p>
+                <ul className="space-y-1 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+                    Continuum bot is added to your workspace
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+                    You can now mention <code>@continuum</code> in any channel
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+                    A setup page opens to connect integrations
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">
+              2
+            </div>
+            <div className="flex-1">
+              <h2>Connect Jira (Optional, 1 minute)</h2>
+              <ol className="mt-2 space-y-2">
+                <li>On the setup page, click <strong>"Connect Jira"</strong></li>
+                <li>You'll be redirected to Atlassian</li>
+                <li>Select your Jira site/workspace</li>
+                <li>Review and authorize permissions</li>
+                <li>You'll be redirected back with a success confirmation</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">
+              3
+            </div>
+            <div className="flex-1">
+              <h2>Connect GitHub (Optional, 1 minute)</h2>
+              <ol className="mt-2 space-y-2">
+                <li>On the setup page, click <strong>"Connect GitHub"</strong></li>
+                <li>You'll be redirected to GitHub</li>
+                <li>Review and authorize permissions</li>
+                <li>You'll be redirected back with a success confirmation</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">
+              4
+            </div>
+            <div className="flex-1">
+              <h2>Start Using (1 minute)</h2>
+              <p className="mt-2">In any Slack channel or DM, try:</p>
+              <pre className="bg-card border border-border rounded-lg p-4 mt-2">
+                <code>{`@continuum show my tasks`}</code>
+              </pre>
+              <p className="mt-4">Or if you connected GitHub:</p>
+              <pre className="bg-card border border-border rounded-lg p-4 mt-2">
+                <code>{`@continuum show my pull requests`}</code>
+              </pre>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="mt-12 p-6 bg-card border border-border rounded-lg">
+        <h2>Verify It's Working</h2>
+        <p>You should see:</p>
+        <ul className="space-y-2 mt-2">
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+            Continuum responds in the thread
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+            Rich formatting with cards and buttons
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+            Actual data from your connected integrations
+          </li>
+        </ul>
+      </section>
+
+      <div className="mt-8 pt-8 border-t border-border flex gap-4">
+        <Link href="/docs/introduction">
+          <Button variant="outline" className="w-full sm:w-auto">
+            ← Introduction
+          </Button>
+        </Link>
+        <Link href="/docs/installing-to-slack" className="ml-auto">
+          <Button variant="default" className="w-full sm:w-auto">
+            Installing to Slack
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
+    </article>
+  );
+}

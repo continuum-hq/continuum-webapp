@@ -177,6 +177,30 @@ export default function InstallPage() {
         </div>
       </section>
 
+      {/* Documentation Link */}
+      <section className="py-16 px-4 border-t border-border/50">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="space-y-4"
+          >
+            <p className="text-muted-foreground">
+              New to Continuum? Check out our comprehensive documentation.
+            </p>
+            <Link
+              href="/docs/introduction"
+              className="inline-flex items-center gap-2 text-accent hover:text-accent/80 transition-colors font-medium"
+            >
+              View Documentation
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Setup Steps */}
       <section className="py-24 px-4 border-t border-border/50 bg-linear-to-b from-background to-card/20">
         <div className="max-w-4xl mx-auto">
