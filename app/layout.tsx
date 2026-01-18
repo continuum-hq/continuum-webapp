@@ -4,6 +4,7 @@ import { Geist, Fraunces } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { StructuredData } from "@/components/structured-data";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -17,13 +18,91 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Continuum | Unified Intelligence for Teams",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://continuum.app"),
+  title: {
+    default: "Continuum | Unified Intelligence for Teams",
+    template: "%s | Continuum",
+  },
   description:
-    "Eliminate context switching with an intelligent productivity agent that unifies Jira, GitHub, and other dev tools in Slack.",
+    "Stop context switching between your tools. Continuum orchestrates the platforms your team already uses through natural language in Slack—with smart delegation, always-on context, and intelligent automation.",
+  keywords: [
+    "productivity",
+    "team collaboration",
+    "Slack bot",
+    "Jira integration",
+    "GitHub integration",
+    "developer tools",
+    "workflow automation",
+    "context switching",
+    "engineering productivity",
+    "AI agent",
+    "smart delegation",
+    "task management",
+    "dev tools",
+    "team intelligence",
+  ],
+  authors: [{ name: "Continuum" }],
+  creator: "Continuum",
+  publisher: "Continuum",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: "/Continuum_Logo.png",
     apple: "/Continuum_Logo.png",
+    shortcut: "/Continuum_Logo.png",
   },
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://continuum.app",
+    siteName: "Continuum",
+    title: "Continuum | Unified Intelligence for Teams",
+    description:
+      "Stop context switching between your tools. Continuum orchestrates the platforms your team already uses through natural language in Slack—with smart delegation, always-on context, and intelligent automation.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Continuum - Unified Intelligence for Teams",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Continuum | Unified Intelligence for Teams",
+    description:
+      "Stop context switching between your tools. Continuum orchestrates the platforms your team already uses through natural language in Slack.",
+    images: ["/og-image.png"],
+    creator: "@avyukt_soni",
+    site: "@avyukt_soni",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // Add your verification codes here when available
+    // google: "your-google-verification-code",
+    // yandex: "your-yandex-verification-code",
+    // yahoo: "your-yahoo-verification-code",
+  },
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://continuum.app",
+  },
+  category: "technology",
 };
 
 export default function RootLayout({
@@ -34,6 +113,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${fraunces.variable} dark`}>
       <body className="font-sans antialiased bg-background text-foreground">
+        <StructuredData />
         <GoogleAnalytics />
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
