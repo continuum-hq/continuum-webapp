@@ -1,6 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
+import {
+    MediaPlayer,
+    MediaProvider,
+    Poster,
+} from "@vidstack/react";
+import {
+    defaultLayoutIcons,
+    DefaultVideoLayout,
+} from "@vidstack/react/player/layouts/default";
+
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
 
 interface VideoDemoProps {
     videoUrl: string;
@@ -16,19 +28,22 @@ export function VideoDemo({ videoUrl, posterUrl }: VideoDemoProps) {
             transition={{ duration: 0.6 }}
             className="w-full rounded-2xl overflow-hidden border border-border bg-card/50 shadow-2xl"
         >
-            <video
-                className="w-full h-auto"
-                controls
-                preload="metadata"
+            <MediaPlayer
+                title="Continuum Multi-Tool Orchestration Demo"
+                src={videoUrl}
                 poster={posterUrl}
-                style={{
-                    maxWidth: "100%",
-                    height: "auto",
-                }}
+                className="w-full aspect-video bg-background text-foreground rounded-2xl overflow-hidden"
+                viewType="video"
+                playsinline
             >
-                <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
+                <MediaProvider />
+                {posterUrl && <Poster className="absolute inset-0 w-full h-full object-cover" />}
+
+                <DefaultVideoLayout
+                    icons={defaultLayoutIcons}
+                    className="[&_vds-controls]:bg-linear-to-t [&_vds-controls]:from-black/80 [&_vds-controls]:to-transparent"
+                />
+            </MediaPlayer>
         </motion.div>
     );
 }
