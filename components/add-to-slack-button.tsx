@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { dispatchUnauthorized } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Slack, ArrowRight, Loader2 } from "lucide-react";
@@ -30,6 +31,10 @@ export function AddToSlackButton({ variant = "default", className = "" }: AddToS
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        dispatchUnauthorized();
+        return;
+      }
       if (data.install_url) {
         window.location.href = data.install_url;
       } else {

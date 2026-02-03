@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { dispatchUnauthorized } from "@/lib/api";
 import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
@@ -63,6 +64,9 @@ function SetupContent() {
       );
 
       if (!res.ok) {
+        if (res.status === 401) {
+          dispatchUnauthorized();
+        }
         if (res.status === 404) {
           throw new Error("Workspace not found. Please install Continuum first.");
         }

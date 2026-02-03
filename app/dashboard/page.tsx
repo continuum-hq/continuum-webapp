@@ -17,7 +17,7 @@ import {
   Github,
   ExternalLink,
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, dispatchUnauthorized } from "@/lib/api";
 
 interface Workspace {
   id: string;
@@ -96,6 +96,7 @@ function DashboardContent() {
           });
 
           if (!res.ok) {
+            if (res.status === 401) dispatchUnauthorized();
             const err = await res.json().catch(() => ({}));
             setConfirmError(
               (err as { message?: string; detail?: string })?.message ||
@@ -129,6 +130,10 @@ function DashboardContent() {
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        dispatchUnauthorized();
+        return;
+      }
       if (data.install_url) {
         window.location.href = data.install_url;
       } else {
