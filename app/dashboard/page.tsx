@@ -99,8 +99,8 @@ function DashboardContent() {
             const err = await res.json().catch(() => ({}));
             setConfirmError(
               (err as { message?: string; detail?: string })?.message ||
-                (err as { message?: string; detail?: string })?.detail ||
-                "Failed to confirm subscription"
+              (err as { message?: string; detail?: string })?.detail ||
+              "Failed to confirm subscription"
             );
           } else {
             // Clean URL to prevent re-confirming on refresh

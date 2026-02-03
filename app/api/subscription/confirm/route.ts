@@ -1,7 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  "http://localhost:8000";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -18,7 +21,11 @@ export async function POST(req: Request) {
     razorpay_signature,
   } = body;
 
-  if (!razorpay_payment_id || !razorpay_payment_link_id || !razorpay_signature) {
+  if (
+    !razorpay_payment_id ||
+    !razorpay_payment_link_id ||
+    !razorpay_signature
+  ) {
     return Response.json(
       { error: "Missing required Razorpay parameters" },
       { status: 400 }
@@ -34,7 +41,8 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       razorpay_payment_id,
       razorpay_payment_link_id,
-      razorpay_payment_link_reference_id: razorpay_payment_link_reference_id || "",
+      razorpay_payment_link_reference_id:
+        razorpay_payment_link_reference_id || "",
       razorpay_payment_link_status,
       razorpay_signature,
     }),
@@ -43,7 +51,9 @@ export async function POST(req: Request) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     return Response.json(
-      (err as { message?: string; detail?: string }) || { error: "Confirmation failed" },
+      (err as { message?: string; detail?: string }) || {
+        error: "Confirmation failed",
+      },
       { status: res.status }
     );
   }
