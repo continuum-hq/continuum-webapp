@@ -88,6 +88,10 @@ export function Navbar() {
                 >
                   Pricing
                 </button>
+                <Link href="/docs" className="hover:text-foreground transition-colors"
+                >
+                  Docs
+                </Link>
               </>
             )}
           </div>
