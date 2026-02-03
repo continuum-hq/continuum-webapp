@@ -70,16 +70,24 @@ export function FeatureComparisonTable() {
                       {item.name}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <CellValue value={item.free} />
+                      <div className="flex justify-center">
+                        <CellValue value={item.free} />
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <CellValue value={item.starter} />
+                      <div className="flex justify-center">
+                        <CellValue value={item.starter} />
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-center bg-accent/5">
-                      <CellValue value={item.pro} />
+                      <div className="flex justify-center">
+                        <CellValue value={item.pro} />
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <CellValue value={item.enterprise} />
+                      <div className="flex justify-center">
+                        <CellValue value={item.enterprise} />
+                      </div>
                     </td>
                   </tr>
                 ))}
