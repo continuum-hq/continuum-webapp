@@ -3,6 +3,7 @@
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
 import { Features } from "@/components/features";
+import { PricingTiers } from "@/components/pricing/pricing-tiers";
 import { Video } from "@/components/video";
 import { Toaster } from "@/components/sonner";
 import { motion } from "framer-motion";
@@ -20,6 +21,7 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <Features />
+      <PricingTiers />
 
       {/* Video Demo Section */}
       <section
@@ -171,6 +173,20 @@ export default function LandingPage() {
                     className="hover:text-accent transition-colors"
                   >
                     Integrations
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("pricing");
+                      element?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="hover:text-accent transition-colors"
+                  >
+                    Pricing
                   </button>
                 </li>
                 <li>

@@ -51,6 +51,12 @@ export function Navbar() {
                 >
                   Integrations
                 </Link>
+                <Link
+                  href="/#pricing"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Pricing
+                </Link>
                 <Link href="/docs" className="hover:text-foreground transition-colors"
                 >
                   Docs
@@ -76,7 +82,12 @@ export function Navbar() {
                 >
                   Integrations
                 </button>
-
+                <button
+                  onClick={() => scrollToSection("pricing")}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Pricing
+                </button>
               </>
             )}
           </div>

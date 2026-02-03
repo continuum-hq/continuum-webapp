@@ -135,22 +135,7 @@ export default function PricingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <Accordion type="single" collapsible className="w-full space-y-2">
-              {FAQ_ITEMS.map((item, i) => (
-                <AccordionItem
-                  key={i}
-                  value={`item-${i}`}
-                  className="border border-border rounded-xl px-4 bg-card/30 data-[state=open]:bg-card/50"
-                >
-                  <AccordionTrigger className="hover:no-underline py-4 text-left font-medium">
-                    {item.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground pb-4">
-                    {item.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <FAQ items={FAQ_ITEMS} />
           </motion.div>
         </div>
       </section>
@@ -183,17 +168,11 @@ export default function PricingPage() {
                 Start free — no credit card
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full"
-              onClick={() => {
-                const el = document.getElementById("get-started");
-                el?.scrollIntoView({ behavior: "smooth", block: "center" });
-              }}
-            >
-              Contact sales
-            </Button>
+            <Link href="/#get-started">
+              <Button variant="outline" size="lg" className="rounded-full">
+                Contact sales
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </section>
