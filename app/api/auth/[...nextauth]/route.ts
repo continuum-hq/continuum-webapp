@@ -56,7 +56,13 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }: { user: { id?: string; accessToken?: string }; account: { provider?: string; id_token?: string } | null }) {
+    async signIn({
+      user,
+      account,
+    }: {
+      user: { id?: string; accessToken?: string };
+      account: { provider?: string; id_token?: string } | null;
+    }) {
       if (account?.provider === "google" && account.id_token) {
         try {
           const data = await apiFetch<{
@@ -76,7 +82,13 @@ export const authOptions = {
       }
       return true;
     },
-    async jwt({ token, user }: { token: JWT; user?: { id?: string; accessToken?: string } | null }) {
+    async jwt({
+      token,
+      user,
+    }: {
+      token: JWT;
+      user?: { id?: string; accessToken?: string } | null;
+    }) {
       if (user) {
         token.accessToken = user.accessToken;
         token.accountId = user.id;
@@ -86,8 +98,10 @@ export const authOptions = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async session({ session, token }: { session: any; token: JWT }) {
       if (session?.user) {
-        (session as { accessToken?: string; accountId?: string }).accessToken = token.accessToken as string;
-        (session as { accessToken?: string; accountId?: string }).accountId = token.accountId as string;
+        (session as { accessToken?: string; accountId?: string }).accessToken =
+          token.accessToken as string;
+        (session as { accessToken?: string; accountId?: string }).accountId =
+          token.accountId as string;
       }
       return session;
     },

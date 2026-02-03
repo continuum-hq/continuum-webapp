@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,15 @@ interface Subscription {
   usage?: Record<string, number>;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [addingSlack, setAddingSlack] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -67,8 +69,53 @@ export default function DashboardPage() {
       }
     };
 
-    fetchData();
-  }, [session, status, router]);
+    const confirmPayment = async () => {
+      const razorpay_payment_id = searchParams.get("razorpay_payment_id");
+      const razorpay_payment_link_id = searchParams.get("razorpay_payment_link_id");
+      const razorpay_signature = searchParams.get("razorpay_signature");
+
+      if (
+        searchParams.get("success") === "true" &&
+        razorpay_payment_id &&
+        razorpay_payment_link_id &&
+        razorpay_signature
+      ) {
+        try {
+          const res = await fetch("/api/subscription/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id,
+              razorpay_payment_link_id,
+              razorpay_payment_link_reference_id:
+                searchParams.get("razorpay_payment_link_reference_id") || "",
+              razorpay_payment_link_status:
+                searchParams.get("razorpay_payment_link_status") || "",
+              razorpay_signature,
+            }),
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            setConfirmError(
+              (err as { message?: string; detail?: string })?.message ||
+                (err as { message?: string; detail?: string })?.detail ||
+                "Failed to confirm subscription"
+            );
+          } else {
+            // Clean URL to prevent re-confirming on refresh
+            window.history.replaceState({}, "", "/dashboard");
+          }
+        } catch (err) {
+          setConfirmError("Failed to confirm subscription");
+        }
+      }
+
+      await fetchData();
+    };
+
+    confirmPayment();
+  }, [session, status, router, searchParams]);
 
   const handleAddToSlack = async () => {
     if (!session?.accessToken) return;
@@ -256,8 +303,38 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </motion.div>
+
+          {confirmError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-destructive text-sm"
+            >
+              {confirmError}
+            </motion.div>
+          )}
         </div>
       </section>
     </main>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen">
+          <Navbar />
+          <section className="relative pt-40 pb-20 px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" />
+              <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+            </div>
+          </section>
+        </main>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
