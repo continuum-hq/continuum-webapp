@@ -180,7 +180,7 @@ function DashboardContent() {
               <div className="mt-4 inline-flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className="border-accent text-accent capitalize"
+                  className="border-white/50 text-white capitalize"
                 >
                   {subscription.tier}
                 </Badge>
