@@ -44,7 +44,13 @@ export function PricingCards({
               )}
             >
               Yearly
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-accent text-white">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] px-1.5 py-0 border-accent",
+                  yearly ? "bg-background text-foreground border-background" : "text-white"
+                )}
+              >
                 Save 20%
               </Badge>
             </button>

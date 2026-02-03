@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 function CellValue({ value }: { value: FeatureValue }) {
   if (typeof value === "boolean") {
     return value ? (
-      <Check className="w-5 h-5 text-accent" aria-label="Included" />
+      <Check className="w-5 h-5 text-white/60" aria-label="Included" />
     ) : (
       <Minus className="w-5 h-5 text-muted-foreground/40" aria-label="Not included" />
     );
@@ -18,7 +18,7 @@ function CellValue({ value }: { value: FeatureValue }) {
       className={cn(
         "text-sm font-medium",
         value === "Roadmap" && "text-muted-foreground italic",
-        value === "Unlimited" || value === "Custom" ? "text-accent" : ""
+        value === "Unlimited" || value === "Custom" ? "text-white" : ""
       )}
     >
       {value}
