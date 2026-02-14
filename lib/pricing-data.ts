@@ -31,7 +31,7 @@ export const PRICING_TIERS: PricingTier[] = [
     cta: "Get started",
     highlighted: false,
     description:
-      "Everything you need to try Continuum. One workspace, core integrations.",
+      "Try Continuum solo. One workspace, limited requests per day—upgrade for teams and more usage.",
     headline: "Start building habits",
   },
   {
@@ -151,7 +151,7 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
       },
       {
         name: "Requests per day",
-        free: "50",
+        free: "5–7",
         starter: "500",
         pro: "Unlimited",
         enterprise: "Unlimited",
@@ -165,7 +165,7 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
       },
       {
         name: "Team members",
-        free: "5",
+        free: "1",
         starter: "15",
         pro: "Unlimited",
         enterprise: "Unlimited",
