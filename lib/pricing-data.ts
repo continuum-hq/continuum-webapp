@@ -151,7 +151,7 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
       },
       {
         name: "Requests per day",
-        free: "5–7",
+        free: "5",
         starter: "500",
         pro: "Unlimited",
         enterprise: "Unlimited",
