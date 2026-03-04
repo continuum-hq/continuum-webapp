@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       paymentId,
       signature,
       eventId,
+      bundleId,
       eventName,
       amount,
       userId,
@@ -60,17 +61,18 @@ export async function POST(req: NextRequest) {
       additionalInfo,
     } = body;
 
+    const hasEvent = eventId && eventName;
+    const hasBundle = bundleId && eventName;
     if (
       !orderId ||
       !paymentId ||
       !signature ||
-      !eventId ||
-      !eventName ||
       amount == null ||
-      !userId
+      !userId ||
+      (!hasEvent && !hasBundle)
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields (need orderId, paymentId, signature, amount, userId, and either eventId+eventName or bundleId+eventName)" },
         { status: 400 }
       );
     }
@@ -97,7 +99,8 @@ export async function POST(req: NextRequest) {
     const callbackPayload = {
       orderId,
       paymentId,
-      eventId,
+      ...(eventId && { eventId }),
+      ...(bundleId && { bundleId }),
       eventName,
       amount: Number(amount),
       userId,

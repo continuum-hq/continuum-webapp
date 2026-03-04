@@ -45,11 +45,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { amount, eventId, eventName, email, userId } = body;
+    const { amount, eventId, bundleId, eventName, email, userId } = body;
 
-    if (!amount || !eventId || !eventName || !email || !userId) {
+    const hasEvent = eventId && eventName;
+    const hasBundle = bundleId && eventName;
+    if (!amount || !email || !userId || (!hasEvent && !hasBundle)) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields (need amount, eventName, email, userId, and either eventId or bundleId)" },
         { status: 400 }
       );
     }
@@ -60,12 +62,14 @@ export async function POST(req: NextRequest) {
       key_secret: keySecret,
     });
 
+    const receiptId = bundleId ? `bundle_${bundleId}` : `ev_${eventId}`;
     const order = await razorpay.orders.create({
       amount: amountInPaise,
       currency: "INR",
-      receipt: `ev_${eventId}_${Date.now().toString(36)}`,
+      receipt: `${receiptId}_${Date.now().toString(36)}`,
       notes: {
-        event_id: eventId,
+        ...(eventId && { event_id: eventId }),
+        ...(bundleId && { bundle_id: bundleId }),
         event_name: eventName,
         user_id: userId,
         participant_email: email,
