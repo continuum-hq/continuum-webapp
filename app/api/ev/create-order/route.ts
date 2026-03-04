@@ -5,12 +5,16 @@ const EV_PROXY_SECRET = process.env.EV_PROXY_SECRET;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://continuumworks.app";
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 
+function normalizeHost(host: string): string {
+  return host.replace(/^www\./i, "") || host;
+}
+
 function isContinuumOrigin(req: NextRequest): boolean {
   try {
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
-    const siteHost = new URL(SITE_URL).hostname;
+    const siteHost = normalizeHost(new URL(SITE_URL).hostname);
     if (!origin) return false;
-    const originHost = new URL(origin).hostname;
+    const originHost = normalizeHost(new URL(origin).hostname);
     return originHost === siteHost || originHost === "localhost";
   } catch {
     return false;

@@ -39,6 +39,7 @@ function EvCheckoutContent() {
   const [razorpayReady, setRazorpayReady] = useState(false);
 
   const eventId = searchParams.get("eventId") ?? "";
+  const bundleId = searchParams.get("bundleId") ?? "";
   const eventName = searchParams.get("eventName") ?? "";
   const amount = searchParams.get("amount");
   const userId = searchParams.get("userId") ?? "";
@@ -47,6 +48,10 @@ function EvCheckoutContent() {
   const returnUrl = searchParams.get("returnUrl") ?? "";
   const teamParam = searchParams.get("team");
   const additionalInfo = searchParams.get("additionalInfo");
+
+  const isBundle = Boolean(bundleId);
+  const hasEvent = Boolean(eventId && eventName);
+  const isValidLink = (hasEvent || isBundle) && amount && userId && email;
 
   let team: unknown = null;
   try {
@@ -57,7 +62,6 @@ function EvCheckoutContent() {
 
   const openPayment = useCallback(async () => {
     if (
-      !eventId ||
       !eventName ||
       !amount ||
       !userId ||
@@ -67,6 +71,10 @@ function EvCheckoutContent() {
       !window.Razorpay
     ) {
       setError("Missing parameters or Razorpay not loaded.");
+      return;
+    }
+    if (!isBundle && !eventId) {
+      setError("Missing eventId or bundleId.");
       return;
     }
 
@@ -79,7 +87,8 @@ function EvCheckoutContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: Number(amount),
-          eventId,
+          eventId: eventId || undefined,
+          bundleId: bundleId || undefined,
           eventName,
           email,
           userId,
@@ -117,7 +126,8 @@ function EvCheckoutContent() {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
-                eventId,
+                eventId: eventId || undefined,
+                bundleId: bundleId || undefined,
                 eventName,
                 amount: Number(amount),
                 userId,
@@ -158,6 +168,7 @@ function EvCheckoutContent() {
     }
   }, [
     eventId,
+    bundleId,
     eventName,
     amount,
     userId,
@@ -167,16 +178,16 @@ function EvCheckoutContent() {
     team,
     additionalInfo,
     razorpayReady,
+    isBundle,
   ]);
 
   useEffect(() => {
-    if (status === "idle" && razorpayReady && eventId && amount) {
+    if (status === "idle" && razorpayReady && (eventId || bundleId) && amount) {
       openPayment();
     }
-  }, [status, razorpayReady, eventId, amount, openPayment]);
+  }, [status, razorpayReady, eventId, bundleId, amount, openPayment]);
 
-  const missing =
-    !eventId || !eventName || !amount || !userId || !email;
+  const missing = !isValidLink;
 
   if (missing) {
     return (

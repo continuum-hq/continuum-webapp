@@ -7,12 +7,16 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const VERCERA_CALLBACK_URL = process.env.VERCERA_CALLBACK_URL;
 const VERCERA_CALLBACK_SECRET = process.env.VERCERA_CALLBACK_SECRET;
 
+function normalizeHost(host: string): string {
+  return host.replace(/^www\./i, "") || host;
+}
+
 function isContinuumOrigin(req: NextRequest): boolean {
   try {
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
-    const siteHost = new URL(SITE_URL).hostname;
+    const siteHost = normalizeHost(new URL(SITE_URL).hostname);
     if (!origin) return false;
-    const originHost = new URL(origin).hostname;
+    const originHost = normalizeHost(new URL(origin).hostname);
     return originHost === siteHost || originHost === "localhost";
   } catch {
     return false;
@@ -116,7 +120,11 @@ export async function POST(req: NextRequest) {
       const errText = await callbackRes.text();
       console.error("Vercera callback failed:", callbackRes.status, errText);
       return NextResponse.json(
-        { error: "Registration callback failed" },
+        {
+          error: "Registration callback failed",
+          callbackStatus: callbackRes.status,
+          callbackError: errText.slice(0, 200),
+        },
         { status: 502 }
       );
     }
