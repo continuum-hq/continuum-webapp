@@ -39,8 +39,6 @@ export interface ApiPlansResponse {
   annual_discount_percent?: number;
 }
 
-const API_URL = typeof window !== "undefined" ? undefined : process.env.NEXT_PUBLIC_API_URL;
-
 /** Fetch plans from API; returns null on failure. */
 export async function fetchPlans(): Promise<PricingTier[] | null> {
   const base = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app") : (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app");
@@ -275,13 +273,6 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
         starter: true,
         pro: true,
         enterprise: true,
-      },
-      {
-        name: "Knowledge facts (team memory)",
-        free: "5",
-        starter: "50",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
       },
       {
         name: "Task history learning",
