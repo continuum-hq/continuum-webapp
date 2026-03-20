@@ -12,6 +12,7 @@ import type {
   BlockerLedgerResponse,
   DashboardIssueItem,
   IssueHealthResponse,
+  OpsFeedResponse,
 } from "@/lib/types/dashboard";
 import { useEffect } from "react";
 
@@ -113,6 +114,7 @@ export default function DashboardOpsPage() {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [health, setHealth] = useState<IssueHealthResponse | null>(null);
   const [ledger, setLedger] = useState<BlockerLedgerResponse | null>(null);
+  const [opsFeed, setOpsFeed] = useState<OpsFeedResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assignIssue, setAssignIssue] = useState<DashboardIssueItem | null>(null);
@@ -126,7 +128,7 @@ export default function DashboardOpsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [h, l, teamRes] = await Promise.all([
+      const [h, l, feed, teamRes] = await Promise.all([
         apiFetch<IssueHealthResponse>(
           `/dashboard/issue-health?workspace_id=${targetWorkspaceId}`,
           {},
@@ -134,6 +136,11 @@ export default function DashboardOpsPage() {
         ),
         apiFetch<BlockerLedgerResponse>(
           `/dashboard/blocker-ledger?workspace_id=${targetWorkspaceId}`,
+          {},
+          session.accessToken
+        ),
+        apiFetch<OpsFeedResponse>(
+          `/dashboard/ops-feed?workspace_id=${targetWorkspaceId}`,
           {},
           session.accessToken
         ),
@@ -145,11 +152,13 @@ export default function DashboardOpsPage() {
       ]);
       setHealth(h);
       setLedger(l);
+      setOpsFeed(feed);
       setTeamMembers(teamRes.members || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load issue ops");
       setHealth(null);
       setLedger(null);
+      setOpsFeed(null);
       setTeamMembers([]);
     } finally {
       setLoading(false);
@@ -309,6 +318,42 @@ export default function DashboardOpsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {!loading && opsFeed && (
+          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-medium">Ops Feed</h2>
+              <Badge className="border-border bg-card/40 text-muted-foreground">
+                {opsFeed.items.length} attention events
+              </Badge>
+            </div>
+            {opsFeed.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No urgent events right now. Your issue stream looks stable.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {opsFeed.items.slice(0, 10).map((item) => (
+                  <div key={`feed-${item.key}-${item.event_type}`} className="rounded-xl border border-border bg-card/40 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {item.key} - {item.summary}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Event: {item.event_type.replace("_", " ")} | Owner: {item.assignee || "Unassigned"} | Status: {item.status || "Unknown"}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="outline" className="rounded-full" onClick={() => openAssignModal(item)}>
+                        Assign
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

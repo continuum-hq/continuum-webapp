@@ -91,3 +91,17 @@ export interface BlockerLedgerResponse {
   assigned: DashboardIssueItem[];
   error?: string;
 }
+
+export interface OpsFeedItem extends DashboardIssueItem {
+  event_type: "blocked" | "unowned" | "high_priority" | "stale";
+  stale_days: number;
+  updated_at?: string | null;
+}
+
+export interface OpsFeedResponse {
+  workspace_id: string;
+  workspace_name?: string;
+  jira_connected: boolean;
+  items: OpsFeedItem[];
+  error?: string;
+}
