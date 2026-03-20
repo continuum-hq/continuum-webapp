@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import type {
   BlockerLedgerResponse,
   DashboardIssueItem,
+  GithubPrOpsResponse,
   IssueHealthResponse,
   OpsFeedResponse,
 } from "@/lib/types/dashboard";
@@ -115,6 +116,7 @@ export default function DashboardOpsPage() {
   const [health, setHealth] = useState<IssueHealthResponse | null>(null);
   const [ledger, setLedger] = useState<BlockerLedgerResponse | null>(null);
   const [opsFeed, setOpsFeed] = useState<OpsFeedResponse | null>(null);
+  const [githubOps, setGithubOps] = useState<GithubPrOpsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assignIssue, setAssignIssue] = useState<DashboardIssueItem | null>(null);
@@ -128,7 +130,7 @@ export default function DashboardOpsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [h, l, feed, teamRes] = await Promise.all([
+      const [h, l, feed, gh, teamRes] = await Promise.all([
         apiFetch<IssueHealthResponse>(
           `/dashboard/issue-health?workspace_id=${targetWorkspaceId}`,
           {},
@@ -144,6 +146,11 @@ export default function DashboardOpsPage() {
           {},
           session.accessToken
         ),
+        apiFetch<GithubPrOpsResponse>(
+          `/dashboard/github-pr-ops?workspace_id=${targetWorkspaceId}`,
+          {},
+          session.accessToken
+        ),
         apiFetch<{ workspace_id: string; members: TeamMemberOption[] }>(
           `/dashboard/team-members?workspace_id=${targetWorkspaceId}`,
           {},
@@ -153,12 +160,14 @@ export default function DashboardOpsPage() {
       setHealth(h);
       setLedger(l);
       setOpsFeed(feed);
+      setGithubOps(gh);
       setTeamMembers(teamRes.members || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load issue ops");
       setHealth(null);
       setLedger(null);
       setOpsFeed(null);
+      setGithubOps(null);
       setTeamMembers([]);
     } finally {
       setLoading(false);
@@ -349,6 +358,54 @@ export default function DashboardOpsPage() {
                       <Button size="sm" variant="outline" className="rounded-full" onClick={() => openAssignModal(item)}>
                         Assign
                       </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && githubOps && (
+          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-medium">GitHub PR Ops</h2>
+              <Badge className="border-border bg-card/40 text-muted-foreground">
+                {githubOps.items.length} PR events
+              </Badge>
+            </div>
+            {!githubOps.github_connected ? (
+              <p className="text-sm text-muted-foreground">
+                GitHub is not connected for this workspace.
+              </p>
+            ) : githubOps.error ? (
+              <p className="text-sm text-muted-foreground">
+                {githubOps.error}
+              </p>
+            ) : githubOps.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No PR attention events right now.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {githubOps.items.slice(0, 10).map((item) => (
+                  <div key={`gh-${item.repo}-${item.number}`} className="rounded-xl border border-border bg-card/40 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {item.url ? (
+                            <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+                              {item.repo} #{item.number}
+                            </a>
+                          ) : (
+                            <span>{item.repo} #{item.number}</span>
+                          )}{" "}
+                          - {item.title}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Event: {item.event_type.replace("_", " ")} | Author: {item.author} | Reviewers: {item.requested_reviewers.length || 0} | Assignees: {item.assignees.length || 0}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}

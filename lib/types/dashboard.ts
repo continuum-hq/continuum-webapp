@@ -105,3 +105,25 @@ export interface OpsFeedResponse {
   items: OpsFeedItem[];
   error?: string;
 }
+
+export interface GithubPrOpsItem {
+  repo: string;
+  number: number;
+  title: string;
+  author: string;
+  url?: string | null;
+  updated_at?: string | null;
+  stale_days: number;
+  assignees: string[];
+  requested_reviewers: string[];
+  event_type: "review_needed" | "unassigned" | "stale";
+}
+
+export interface GithubPrOpsResponse {
+  workspace_id: string;
+  workspace_name?: string;
+  github_connected: boolean;
+  repo?: string;
+  items: GithubPrOpsItem[];
+  error?: string;
+}
