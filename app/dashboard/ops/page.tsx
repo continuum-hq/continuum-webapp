@@ -98,6 +98,13 @@ interface AssignIssuePayload {
   assignee_name: string;
 }
 
+interface GithubActionPayload {
+  workspace_id: string;
+  repo: string;
+  pr_number: number;
+  usernames: string[];
+}
+
 interface TeamMemberOption {
   name: string;
   aliases: string[];
@@ -124,6 +131,11 @@ export default function DashboardOpsPage() {
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMemberOption[]>([]);
+  const [githubActionType, setGithubActionType] = useState<"assign" | "review" | null>(null);
+  const [githubActionItem, setGithubActionItem] = useState<GithubPrOpsResponse["items"][number] | null>(null);
+  const [githubUserInput, setGithubUserInput] = useState("");
+  const [githubSelected, setGithubSelected] = useState("");
+  const [githubActing, setGithubActing] = useState(false);
 
   const loadData = async (targetWorkspaceId: string) => {
     if (status !== "authenticated" || !session?.accessToken || !targetWorkspaceId) return;
@@ -220,6 +232,73 @@ export default function DashboardOpsPage() {
       setError(e instanceof Error ? e.message : "Failed to assign issue");
     } finally {
       setAssigning(false);
+    }
+  };
+
+  const githubHandles = useMemo(
+    () =>
+      teamMembers
+        .map((m) => (m.github || "").trim().replace(/^@/, ""))
+        .filter((v, i, arr) => !!v && arr.indexOf(v) === i),
+    [teamMembers]
+  );
+
+  const openGithubModal = (item: GithubPrOpsResponse["items"][number], type: "assign" | "review") => {
+    setGithubActionItem(item);
+    setGithubActionType(type);
+    setGithubUserInput("");
+    setGithubSelected("");
+  };
+
+  const submitGithubAction = async () => {
+    if (!workspaceId || !session?.accessToken || !githubActionItem || !githubActionType) return;
+    const usernames = (githubSelected || githubUserInput)
+      .split(",")
+      .map((s) => s.trim().replace(/^@/, ""))
+      .filter(Boolean);
+    if (usernames.length === 0) {
+      setError("Provide at least one GitHub username.");
+      return;
+    }
+    setGithubActing(true);
+    setError(null);
+    try {
+      const payload: GithubActionPayload = {
+        workspace_id: workspaceId,
+        repo: githubActionItem.repo,
+        pr_number: githubActionItem.number,
+        usernames,
+      };
+      if (githubActionType === "assign") {
+        await apiFetch("/dashboard/github/assign-pr", {
+          method: "POST",
+          body: JSON.stringify({
+            workspace_id: payload.workspace_id,
+            repo: payload.repo,
+            pr_number: payload.pr_number,
+            assignees: payload.usernames,
+          }),
+        }, session.accessToken);
+      } else {
+        await apiFetch("/dashboard/github/request-review", {
+          method: "POST",
+          body: JSON.stringify({
+            workspace_id: payload.workspace_id,
+            repo: payload.repo,
+            pr_number: payload.pr_number,
+            reviewers: payload.usernames,
+          }),
+        }, session.accessToken);
+      }
+      setGithubActionItem(null);
+      setGithubActionType(null);
+      setGithubUserInput("");
+      setGithubSelected("");
+      await loadData(workspaceId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "GitHub action failed");
+    } finally {
+      setGithubActing(false);
     }
   };
 
@@ -406,6 +485,14 @@ export default function DashboardOpsPage() {
                           Event: {item.event_type.replace("_", " ")} | Author: {item.author} | Reviewers: {item.requested_reviewers.length || 0} | Assignees: {item.assignees.length || 0}
                         </p>
                       </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "review")}>
+                          Request review
+                        </Button>
+                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "assign")}>
+                          Assign PR
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -527,6 +614,60 @@ export default function DashboardOpsPage() {
                 </Button>
                 <Button onClick={submitAssign} disabled={assigning}>
                   {assigning ? "Assigning..." : "Confirm"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {githubActionItem && githubActionType && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-background p-5 shadow-xl">
+              <h3 className="text-base font-semibold">
+                {githubActionType === "assign" ? "Assign PR" : "Request PR Review"}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {githubActionItem.repo} #{githubActionItem.number}
+              </p>
+              <input
+                value={githubUserInput}
+                onChange={(e) => setGithubUserInput(e.target.value)}
+                className="mt-3 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                placeholder="GitHub username(s), comma separated"
+              />
+              {githubHandles.length > 0 && (
+                <select
+                  value={githubSelected}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setGithubSelected(val);
+                    if (val) setGithubUserInput(val);
+                  }}
+                  className="mt-3 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Select from team GitHub handles (optional)</option>
+                  {githubHandles.map((h) => (
+                    <option key={h} value={h}>
+                      @{h}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (githubActing) return;
+                    setGithubActionItem(null);
+                    setGithubActionType(null);
+                    setGithubUserInput("");
+                    setGithubSelected("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={submitGithubAction} disabled={githubActing}>
+                  {githubActing ? "Applying..." : "Confirm"}
                 </Button>
               </div>
             </div>
