@@ -6,6 +6,7 @@ import { AlertTriangle, Loader2, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
   BlockerLedgerResponse,
@@ -89,6 +90,19 @@ function IssueRow({ item }: { item: DashboardIssueItem }) {
   );
 }
 
+interface AssignIssuePayload {
+  workspace_id: string;
+  issue_key: string;
+  assignee_name: string;
+}
+
+interface TeamMemberOption {
+  name: string;
+  aliases: string[];
+  github?: string | null;
+  skills: string[];
+}
+
 export default function DashboardOpsPage() {
   const { data: session, status } = useSession();
   const { workspaces } = useDashboard();
@@ -101,6 +115,46 @@ export default function DashboardOpsPage() {
   const [ledger, setLedger] = useState<BlockerLedgerResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assignIssue, setAssignIssue] = useState<DashboardIssueItem | null>(null);
+  const [assigneeInput, setAssigneeInput] = useState("");
+  const [selectedAssignee, setSelectedAssignee] = useState("");
+  const [assigning, setAssigning] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberOption[]>([]);
+
+  const loadData = async (targetWorkspaceId: string) => {
+    if (status !== "authenticated" || !session?.accessToken || !targetWorkspaceId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [h, l, teamRes] = await Promise.all([
+        apiFetch<IssueHealthResponse>(
+          `/dashboard/issue-health?workspace_id=${targetWorkspaceId}`,
+          {},
+          session.accessToken
+        ),
+        apiFetch<BlockerLedgerResponse>(
+          `/dashboard/blocker-ledger?workspace_id=${targetWorkspaceId}`,
+          {},
+          session.accessToken
+        ),
+        apiFetch<{ workspace_id: string; members: TeamMemberOption[] }>(
+          `/dashboard/team-members?workspace_id=${targetWorkspaceId}`,
+          {},
+          session.accessToken
+        ),
+      ]);
+      setHealth(h);
+      setLedger(l);
+      setTeamMembers(teamRes.members || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load issue ops");
+      setHealth(null);
+      setLedger(null);
+      setTeamMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!workspaceId && jiraWorkspaces.length > 0) {
@@ -109,35 +163,47 @@ export default function DashboardOpsPage() {
   }, [jiraWorkspaces, workspaceId]);
 
   useEffect(() => {
-    const run = async () => {
-      if (status !== "authenticated" || !session?.accessToken || !workspaceId) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const [h, l] = await Promise.all([
-          apiFetch<IssueHealthResponse>(
-            `/dashboard/issue-health?workspace_id=${workspaceId}`,
-            {},
-            session.accessToken
-          ),
-          apiFetch<BlockerLedgerResponse>(
-            `/dashboard/blocker-ledger?workspace_id=${workspaceId}`,
-            {},
-            session.accessToken
-          ),
-        ]);
-        setHealth(h);
-        setLedger(l);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load issue ops");
-        setHealth(null);
-        setLedger(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void run();
+    if (!workspaceId) return;
+    void loadData(workspaceId);
   }, [session?.accessToken, status, workspaceId]);
+
+  const openAssignModal = (item: DashboardIssueItem) => {
+    setAssignIssue(item);
+    const guessed =
+      item.assignee && item.assignee !== "Unassigned" ? item.assignee : "";
+    setAssigneeInput(guessed);
+    setSelectedAssignee("");
+  };
+
+  const submitAssign = async () => {
+    if (!assignIssue || !workspaceId || !session?.accessToken) return;
+    const assignee = (selectedAssignee || assigneeInput).trim();
+    if (!assignee) {
+      setError("Assignee is required.");
+      return;
+    }
+    setAssigning(true);
+    setError(null);
+    try {
+      const payload: AssignIssuePayload = {
+        workspace_id: workspaceId,
+        issue_key: assignIssue.key,
+        assignee_name: assignee,
+      };
+      await apiFetch("/dashboard/assign", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }, session.accessToken);
+      setAssignIssue(null);
+      setAssigneeInput("");
+      setSelectedAssignee("");
+      await loadData(workspaceId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to assign issue");
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   return (
     <section className="pb-8">
@@ -228,7 +294,19 @@ export default function DashboardOpsPage() {
             </div>
             <div className="mt-4 space-y-2">
               {(health.top_items || []).slice(0, 8).map((item) => (
-                <IssueRow key={item.key} item={item} />
+                <div key={item.key} className="space-y-2">
+                  <IssueRow item={item} />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => openAssignModal(item)}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -254,7 +332,21 @@ export default function DashboardOpsPage() {
                   {(ledger.needs_owner || []).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No unassigned blockers.</p>
                   ) : (
-                    (ledger.needs_owner || []).map((item) => <IssueRow key={`n-${item.key}`} item={item} />)
+                    (ledger.needs_owner || []).map((item) => (
+                      <div key={`n-${item.key}`} className="space-y-2">
+                        <IssueRow item={item} />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => openAssignModal(item)}
+                          >
+                            Assign
+                          </Button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
                 <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
@@ -262,11 +354,80 @@ export default function DashboardOpsPage() {
                   {(ledger.assigned || []).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No assigned blockers.</p>
                   ) : (
-                    (ledger.assigned || []).map((item) => <IssueRow key={`a-${item.key}`} item={item} />)
+                    (ledger.assigned || []).map((item) => (
+                      <div key={`a-${item.key}`} className="space-y-2">
+                        <IssueRow item={item} />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => openAssignModal(item)}
+                          >
+                            Reassign
+                          </Button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {assignIssue && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-background p-5 shadow-xl">
+              <h3 className="text-base font-semibold">Confirm Assignment</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Assign <span className="font-medium text-foreground">{assignIssue.key}</span> to:
+              </p>
+              <input
+                value={assigneeInput}
+                onChange={(e) => setAssigneeInput(e.target.value)}
+                className="mt-3 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                placeholder="Enter name or alias"
+              />
+              {teamMembers.length > 0 && (
+                <select
+                  value={selectedAssignee}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedAssignee(val);
+                    if (val) setAssigneeInput(val);
+                  }}
+                  className="mt-3 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Select from team directory (optional)</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.name}
+                      {m.aliases?.length ? ` (${m.aliases.join(", ")})` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                Team aliases are resolved on the backend before Jira update.
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (assigning) return;
+                    setAssignIssue(null);
+                    setAssigneeInput("");
+                    setSelectedAssignee("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={submitAssign} disabled={assigning}>
+                  {assigning ? "Assigning..." : "Confirm"}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
