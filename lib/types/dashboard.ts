@@ -91,3 +91,58 @@ export interface BlockerLedgerResponse {
   assigned: DashboardIssueItem[];
   error?: string;
 }
+
+export interface OpsFeedItem extends DashboardIssueItem {
+  event_type: "blocked" | "unowned" | "high_priority" | "stale";
+  stale_days: number;
+  updated_at?: string | null;
+}
+
+export interface OpsFeedResponse {
+  workspace_id: string;
+  workspace_name?: string;
+  jira_connected: boolean;
+  items: OpsFeedItem[];
+  error?: string;
+}
+
+export interface GithubPrOpsItem {
+  repo: string;
+  number: number;
+  title: string;
+  author: string;
+  url?: string | null;
+  updated_at?: string | null;
+  stale_days: number;
+  assignees: string[];
+  requested_reviewers: string[];
+  event_type: "review_needed" | "unassigned" | "stale";
+}
+
+export interface GithubPrOpsResponse {
+  workspace_id: string;
+  workspace_name?: string;
+  github_connected: boolean;
+  repo?: string;
+  items: GithubPrOpsItem[];
+  error?: string;
+}
+
+export interface UnifiedOpsItem {
+  source: "jira" | "github";
+  id: string;
+  title: string;
+  subtitle: string;
+  url?: string | null;
+  rank: number;
+  stale_days: number;
+  raw?: Record<string, unknown>;
+}
+
+export interface UnifiedOpsResponse {
+  workspace_id: string;
+  workspace_name?: string;
+  integration: "all" | "jira" | "github";
+  total: number;
+  items: UnifiedOpsItem[];
+}
