@@ -136,6 +136,7 @@ export default function DashboardOpsPage() {
   const [githubUserInput, setGithubUserInput] = useState("");
   const [githubSelected, setGithubSelected] = useState("");
   const [githubActing, setGithubActing] = useState(false);
+  const [integrationFilter, setIntegrationFilter] = useState<"all" | "jira" | "github">("all");
 
   const loadData = async (targetWorkspaceId: string) => {
     if (status !== "authenticated" || !session?.accessToken || !targetWorkspaceId) return;
@@ -243,6 +244,45 @@ export default function DashboardOpsPage() {
     [teamMembers]
   );
 
+  const unifiedActivity = useMemo(() => {
+    const jiraItems = (opsFeed?.items || []).map((item) => ({
+      source: "jira" as const,
+      key: item.key,
+      title: item.summary,
+      subtitle: `Event: ${item.event_type.replace("_", " ")} | Owner: ${item.assignee || "Unassigned"} | Status: ${item.status || "Unknown"}`,
+      url: item.url || undefined,
+      rank:
+        item.event_type === "blocked"
+          ? 0
+          : item.event_type === "unowned"
+            ? 1
+            : item.event_type === "high_priority"
+              ? 2
+              : 3,
+      staleDays: item.stale_days || 0,
+    }));
+    const ghItems = (githubOps?.items || []).map((item) => ({
+      source: "github" as const,
+      key: `${item.repo}#${item.number}`,
+      title: item.title,
+      subtitle: `Event: ${item.event_type.replace("_", " ")} | Author: ${item.author} | Reviewers: ${item.requested_reviewers.length || 0}`,
+      url: item.url || undefined,
+      rank:
+        item.event_type === "review_needed"
+          ? 0
+          : item.event_type === "unassigned"
+            ? 1
+            : 2,
+      staleDays: item.stale_days || 0,
+    }));
+    const merged = [...jiraItems, ...ghItems];
+    const filtered =
+      integrationFilter === "all"
+        ? merged
+        : merged.filter((x) => x.source === integrationFilter);
+    return filtered.sort((a, b) => a.rank - b.rank || b.staleDays - a.staleDays).slice(0, 15);
+  }, [opsFeed, githubOps, integrationFilter]);
+
   const openGithubModal = (item: GithubPrOpsResponse["items"][number], type: "assign" | "review") => {
     setGithubActionItem(item);
     setGithubActionType(type);
@@ -312,6 +352,29 @@ export default function DashboardOpsPage() {
             <p className="mt-1 text-sm text-muted-foreground sm:text-base">
               Shared Jira reality for blockers, ownership, and top attention items.
             </p>
+            <div className="mt-3 inline-flex rounded-lg border border-border bg-card/40 p-1">
+              <button
+                type="button"
+                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "all" ? "bg-muted text-foreground" : "text-muted-foreground")}
+                onClick={() => setIntegrationFilter("all")}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "jira" ? "bg-muted text-foreground" : "text-muted-foreground")}
+                onClick={() => setIntegrationFilter("jira")}
+              >
+                Jira
+              </button>
+              <button
+                type="button"
+                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "github" ? "bg-muted text-foreground" : "text-muted-foreground")}
+                onClick={() => setIntegrationFilter("github")}
+              >
+                GitHub
+              </button>
+            </div>
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Workspace</label>
@@ -347,7 +410,48 @@ export default function DashboardOpsPage() {
           </div>
         )}
 
-        {!loading && health && (
+        {!loading && (
+          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-medium">Unified Activity</h2>
+              <Badge className="border-border bg-card/40 text-muted-foreground">
+                {unifiedActivity.length} ranked events
+              </Badge>
+            </div>
+            {unifiedActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No events for current filter.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {unifiedActivity.map((item) => (
+                  <div key={`unified-${item.source}-${item.key}`} className="rounded-xl border border-border bg-card/40 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {item.url ? (
+                            <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+                              {item.key}
+                            </a>
+                          ) : (
+                            item.key
+                          )}{" "}
+                          - {item.title}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Source: {item.source} | {item.subtitle}
+                        </p>
+                      </div>
+                      <Badge className="border-border bg-card/40 text-muted-foreground">{item.source}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && health && integrationFilter !== "github" && (
           <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="font-medium">Issue Health Brief</h2>
@@ -409,7 +513,7 @@ export default function DashboardOpsPage() {
           </div>
         )}
 
-        {!loading && opsFeed && (
+        {!loading && opsFeed && integrationFilter !== "github" && (
           <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-medium">Ops Feed</h2>
@@ -445,7 +549,7 @@ export default function DashboardOpsPage() {
           </div>
         )}
 
-        {!loading && githubOps && (
+        {!loading && githubOps && integrationFilter !== "jira" && (
           <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-medium">GitHub PR Ops</h2>
@@ -501,7 +605,7 @@ export default function DashboardOpsPage() {
           </div>
         )}
 
-        {!loading && ledger && (
+        {!loading && ledger && integrationFilter !== "github" && (
           <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-medium">Blocker Ledger</h2>
