@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { PricingCards } from "@/components/pricing/pricing-cards";
 import { FeatureComparisonTable } from "@/components/pricing/feature-comparison-table";
-import { OpsPricingHighlight } from "@/components/pricing/ops-pricing-highlight";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { FAQ } from "@/components/pricing/faq";
@@ -141,8 +140,6 @@ function PricingContent() {
           </motion.p>
         </div>
       </section>
-
-      <OpsPricingHighlight />
 
       {/* Success / Canceled banners */}
       {success === "true" && (

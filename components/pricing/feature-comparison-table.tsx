@@ -2,10 +2,35 @@
 
 import { Fragment } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Check, Minus } from "lucide-react";
-import { FEATURE_MATRIX, type FeatureValue } from "@/lib/pricing-data";
+import { FEATURE_MATRIX, type FeatureItem, type FeatureValue } from "@/lib/pricing-data";
 import { cn } from "@/lib/utils";
+
+function opsTaglineFromName(name: string): string {
+  const parts = name.split(/\s—\s/);
+  return parts.length > 1 ? parts.slice(1).join(" — ") : name;
+}
+
+function FeatureNameCell({ item }: { item: FeatureItem }) {
+  if (item.nameVariant === "ops-logo") {
+    const tagline = opsTaglineFromName(item.name);
+    return (
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 min-w-0" aria-label={item.name}>
+        <Image
+          src="/Continuum_Ops_Logo.png"
+          alt=""
+          width={1080}
+          height={1080}
+          className="h-[18px] sm:h-5 w-auto max-w-[min(7.5rem,28vw)] object-contain object-left shrink-0 opacity-[0.92]"
+        />
+        <span className="text-s font-medium text-muted-foreground leading-snug max-w-[16rem]">
+          {tagline}
+        </span>
+      </div>
+    );
+  }
+  return <>{item.name}</>;
+}
 
 function CellValue({ value }: { value: FeatureValue }) {
   if (typeof value === "boolean") {
@@ -55,80 +80,90 @@ export function FeatureComparisonTable() {
           <tbody>
             {FEATURE_MATRIX.map((section, sectionIdx) => (
               <Fragment key={`section-${section.category}-${sectionIdx}`}>
-                <tr
-                  className={cn(
-                    "border-b border-border/50",
-                    section.highlight && "bg-cyan-500/[0.04]"
-                  )}
-                >
-                  <td colSpan={5} className="py-3 pt-6">
-                    {section.highlight ? (
-                      <div className="flex flex-col gap-3 rounded-xl border border-cyan-500/25 bg-linear-to-r from-cyan-500/10 via-background to-violet-500/5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-                        <div className="flex shrink-0 items-center justify-center rounded-lg border border-cyan-500/20 bg-card/50 p-2">
-                          <Image
-                            src="/Continuum_Ops_Logo.png"
-                            alt=""
-                            width={120}
-                            height={40}
-                            className="h-8 w-auto object-contain"
-                          />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground/95 uppercase tracking-wider text-xs">
-                            {section.category}
-                          </p>
-                          {section.categorySubtitle ? (
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              {section.categorySubtitle}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="font-medium text-foreground/90 uppercase tracking-wider text-xs">
-                        {section.category}
-                      </span>
-                    )}
+                <tr className="border-b border-border/50">
+                  <td
+                    colSpan={5}
+                    className="py-3 pt-6 font-medium text-foreground/90 uppercase tracking-wider text-xs"
+                  >
+                    {section.category}
                   </td>
                 </tr>
-                {section.items.map((item, itemIdx) => (
-                  <tr
-                    key={`${sectionIdx}-${itemIdx}-${item.name}`}
-                    className={cn(
-                      "border-b border-border/30 transition-colors hover:bg-card/30",
-                      section.highlight && "bg-cyan-500/[0.02] hover:bg-cyan-500/[0.06]"
-                    )}
-                  >
-                    <td
+                {section.items.map((item, itemIdx) => {
+                  const isOpsRow = item.rowAccent === "ops";
+                  const isOpsCoreRow = item.nameVariant === "ops-logo";
+                  return (
+                    <tr
+                      key={`${sectionIdx}-${itemIdx}-${item.name}`}
                       className={cn(
-                        "py-3 pr-6 text-sm text-muted-foreground",
-                        section.highlight && "font-medium text-cyan-100/90"
+                        "border-b border-border/30 transition-colors",
+                        isOpsRow
+                          ? "bg-cyan-500/6 hover:bg-cyan-500/10"
+                          : isOpsCoreRow
+                            ? "bg-accent/5 hover:bg-accent/8"
+                            : "hover:bg-card/30"
                       )}
                     >
-                      {item.name}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex justify-center">
-                        <CellValue value={item.free} />
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex justify-center">
-                        <CellValue value={item.starter} />
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center bg-accent/5">
-                      <div className="flex justify-center">
-                        <CellValue value={item.pro} />
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex justify-center">
-                        <CellValue value={item.enterprise} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <td
+                        className={cn(
+                          "py-3 pr-6 text-sm text-muted-foreground",
+                          isOpsRow &&
+                          "border-l-2 border-l-cyan-500/50 bg-cyan-500/5 pl-3 text-cyan-50/95",
+                          isOpsCoreRow &&
+                          "border-l-2 border-l-accent/40 bg-accent/5 pl-3 text-foreground/90"
+                        )}
+                      >
+                        <FeatureNameCell item={item} />
+                      </td>
+                      <td
+                        className={cn(
+                          "py-3 px-4 text-center",
+                          isOpsRow && "bg-cyan-500/5",
+                          isOpsCoreRow && "bg-accent/5"
+                        )}
+                      >
+                        <div className="flex justify-center">
+                          <CellValue value={item.free} />
+                        </div>
+                      </td>
+                      <td
+                        className={cn(
+                          "py-3 px-4 text-center",
+                          isOpsRow && "bg-cyan-500/5",
+                          isOpsCoreRow && "bg-accent/5"
+                        )}
+                      >
+                        <div className="flex justify-center">
+                          <CellValue value={item.starter} />
+                        </div>
+                      </td>
+                      <td
+                        className={cn(
+                          "py-3 px-4 text-center",
+                          isOpsRow
+                            ? "bg-cyan-500/10"
+                            : isOpsCoreRow
+                              ? "bg-accent/10"
+                              : "bg-accent/5"
+                        )}
+                      >
+                        <div className="flex justify-center">
+                          <CellValue value={item.pro} />
+                        </div>
+                      </td>
+                      <td
+                        className={cn(
+                          "py-3 px-4 text-center",
+                          isOpsRow && "bg-cyan-500/5",
+                          isOpsCoreRow && "bg-accent/5"
+                        )}
+                      >
+                        <div className="flex justify-center">
+                          <CellValue value={item.enterprise} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </Fragment>
             ))}
           </tbody>

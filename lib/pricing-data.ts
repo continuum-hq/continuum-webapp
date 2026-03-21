@@ -41,13 +41,18 @@ export interface ApiPlansResponse {
 
 /** Fetch plans from API; returns null on failure. */
 export async function fetchPlans(): Promise<PricingTier[] | null> {
-  const base = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app") : (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app");
+  const base =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app"
+      : process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app";
   try {
     const res = await fetch(`${base}/plans`);
     if (!res.ok) return null;
     const data = (await res.json()) as ApiPlansResponse;
     if (!Array.isArray(data.tiers)) return null;
-    return data.tiers.map(mapApiTierToPricingTier).filter(Boolean) as PricingTier[];
+    return data.tiers
+      .map(mapApiTierToPricingTier)
+      .filter(Boolean) as PricingTier[];
   } catch {
     return null;
   }
@@ -55,7 +60,8 @@ export async function fetchPlans(): Promise<PricingTier[] | null> {
 
 function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
   const id = t.id?.toLowerCase() as TierId | undefined;
-  if (!id || !["free", "starter", "pro", "enterprise"].includes(id)) return null;
+  if (!id || !["free", "starter", "pro", "enterprise"].includes(id))
+    return null;
   const price = t.price ?? null;
   const priceYearly = t.price_yearly ?? null;
   return {
@@ -63,7 +69,8 @@ function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
     name: t.name || t.id,
     price,
     priceYearly,
-    priceDisplay: t.price_display ?? (price != null ? `₹${price}` : "Contact us"),
+    priceDisplay:
+      t.price_display ?? (price != null ? `₹${price}` : "Contact us"),
     priceYearlyDisplay: priceYearly != null ? `₹${priceYearly}` : undefined,
     period: t.period ?? null,
     cta: t.contact_sales ? "Contact sales" : "Get started",
@@ -74,10 +81,14 @@ function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
 }
 
 function getTierDescription(id: TierId, t: ApiPlanTier): string {
-  if (id === "free") return "Everything you need to try Continuum. One workspace, core integrations.";
-  if (id === "starter") return "Remove limits. Multiple workspaces, more context, email support.";
-  if (id === "pro") return "Advanced AI delegation, analytics, unlimited usage, priority support.";
-  if (id === "enterprise") return "SSO, SLA, self-host, and custom integrations for large orgs.";
+  if (id === "free")
+    return "Everything you need to try Continuum. One workspace, core integrations.";
+  if (id === "starter")
+    return "Remove limits. Multiple workspaces, more context, email support.";
+  if (id === "pro")
+    return "Advanced AI delegation, analytics, unlimited usage, priority support.";
+  if (id === "enterprise")
+    return "SSO, SLA, self-host, and custom integrations for large orgs.";
   return "";
 }
 
@@ -155,14 +166,14 @@ export interface FeatureItem {
   starter: FeatureValue;
   pro: FeatureValue;
   enterprise: FeatureValue;
+  /** Subtle row styling in the comparison table (e.g. Continuum Ops limits) */
+  rowAccent?: "ops";
+  /** Render Ops logo + tagline (from text after " — " in `name`) instead of plain text */
+  nameVariant?: "ops-logo";
 }
 
 export interface FeatureCategory {
   category: string;
-  /** When true, section uses Continuum Ops styling (logo, cyan accent) in the comparison table */
-  highlight?: boolean;
-  /** Shown under category title when highlight is true */
-  categorySubtitle?: string;
   items: FeatureItem[];
 }
 
@@ -208,6 +219,14 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
       {
         name: "Multi-turn follow-up conversations",
         free: true,
+        starter: true,
+        pro: true,
+        enterprise: true,
+      },
+      {
+        name: "UNIFIED COMMAND CENTER",
+        nameVariant: "ops-logo",
+        free: false,
         starter: true,
         pro: true,
         enterprise: true,
@@ -266,19 +285,13 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
         pro: "1",
         enterprise: "Unlimited",
       },
-    ],
-  },
-  {
-    category: "Continuum Ops",
-    highlight: true,
-    categorySubtitle: "AI briefs & manual refreshes — scales with your plan",
-    items: [
       {
         name: "AI-generated Ops briefs (per user / day)",
         free: "0",
         starter: "2",
         pro: "8",
         enterprise: "Unlimited",
+        rowAccent: "ops",
       },
       {
         name: "Manual Ops brief refreshes (per user / day)",
@@ -286,6 +299,7 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
         starter: "2",
         pro: "5",
         enterprise: "Unlimited",
+        rowAccent: "ops",
       },
     ],
   },
