@@ -41,13 +41,18 @@ export interface ApiPlansResponse {
 
 /** Fetch plans from API; returns null on failure. */
 export async function fetchPlans(): Promise<PricingTier[] | null> {
-  const base = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app") : (process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app");
+  const base =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app"
+      : process.env.NEXT_PUBLIC_API_URL || "https://api.continuumworks.app";
   try {
     const res = await fetch(`${base}/plans`);
     if (!res.ok) return null;
     const data = (await res.json()) as ApiPlansResponse;
     if (!Array.isArray(data.tiers)) return null;
-    return data.tiers.map(mapApiTierToPricingTier).filter(Boolean) as PricingTier[];
+    return data.tiers
+      .map(mapApiTierToPricingTier)
+      .filter(Boolean) as PricingTier[];
   } catch {
     return null;
   }
@@ -55,7 +60,8 @@ export async function fetchPlans(): Promise<PricingTier[] | null> {
 
 function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
   const id = t.id?.toLowerCase() as TierId | undefined;
-  if (!id || !["free", "starter", "pro", "enterprise"].includes(id)) return null;
+  if (!id || !["free", "starter", "pro", "enterprise"].includes(id))
+    return null;
   const price = t.price ?? null;
   const priceYearly = t.price_yearly ?? null;
   return {
@@ -63,7 +69,8 @@ function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
     name: t.name || t.id,
     price,
     priceYearly,
-    priceDisplay: t.price_display ?? (price != null ? `₹${price}` : "Contact us"),
+    priceDisplay:
+      t.price_display ?? (price != null ? `₹${price}` : "Contact us"),
     priceYearlyDisplay: priceYearly != null ? `₹${priceYearly}` : undefined,
     period: t.period ?? null,
     cta: t.contact_sales ? "Contact sales" : "Get started",
@@ -74,10 +81,14 @@ function mapApiTierToPricingTier(t: ApiPlanTier): PricingTier | null {
 }
 
 function getTierDescription(id: TierId, t: ApiPlanTier): string {
-  if (id === "free") return "Everything you need to try Continuum. One workspace, core integrations.";
-  if (id === "starter") return "Remove limits. Multiple workspaces, more context, email support.";
-  if (id === "pro") return "Advanced AI delegation, analytics, unlimited usage, priority support.";
-  if (id === "enterprise") return "SSO, SLA, self-host, and custom integrations for large orgs.";
+  if (id === "free")
+    return "Everything you need to try Continuum. One workspace, core integrations.";
+  if (id === "starter")
+    return "Remove limits. Multiple workspaces, more context, email support.";
+  if (id === "pro")
+    return "Advanced AI delegation, analytics, unlimited usage, priority support.";
+  if (id === "enterprise")
+    return "SSO, SLA, self-host, and custom integrations for large orgs.";
   return "";
 }
 
@@ -155,11 +166,17 @@ export interface FeatureItem {
   starter: FeatureValue;
   pro: FeatureValue;
   enterprise: FeatureValue;
+  /** Subtle row styling in the comparison table (e.g. Continuum Ops limits) */
+  rowAccent?: "ops";
+  /** Render Ops logo + tagline (from text after " — " in `name`) instead of plain text */
+  nameVariant?: "ops-logo";
 }
 
 export interface FeatureCategory {
   category: string;
   items: FeatureItem[];
+  /** Shared row styling for Continuum Ops (teal accent) */
+  variant?: "ops-highlight";
 }
 
 export const FEATURE_MATRIX: FeatureCategory[] = [
@@ -211,55 +228,83 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
     ],
   },
   {
+    category: "Continuum Ops",
+    variant: "ops-highlight",
+    items: [
+      {
+        name: "Continuum Ops — Unified command center",
+        nameVariant: "ops-logo",
+        free: false,
+        starter: true,
+        pro: true,
+        enterprise: true,
+      },
+      {
+        name: "AI-generated Ops briefs (per user / day)",
+        free: "0",
+        starter: "2",
+        pro: "8",
+        enterprise: "Unlimited",
+      },
+      {
+        name: "Manual Ops brief refreshes (per user / day)",
+        free: "0",
+        starter: "2",
+        pro: "5",
+        enterprise: "Unlimited",
+      },
+    ],
+  },
+  {
     category: "Usage Limits",
     items: [
       {
         name: "Slack workspaces",
         free: "1",
-        starter: "3",
-        pro: "Unlimited",
+        starter: "2",
+        pro: "5",
         enterprise: "Unlimited",
       },
       {
         name: "Requests per day",
         free: "7",
-        starter: "500",
-        pro: "Unlimited",
+        starter: "50",
+        pro: "250",
         enterprise: "Unlimited",
       },
       {
         name: "Messages per thread (memory)",
         free: "10",
-        starter: "30",
-        pro: "100",
+        starter: "20",
+        pro: "50",
         enterprise: "100",
       },
       {
         name: "Knowledge facts (team memory)",
         free: "5",
-        starter: "50",
-        pro: "Unlimited",
+        starter: "15",
+        pro: "75",
         enterprise: "Unlimited",
       },
       {
         name: "Team members",
         free: "1",
-        starter: "15",
-        pro: "Unlimited",
+        starter: "5",
+        pro: "15",
         enterprise: "Unlimited",
       },
       {
         name: "Jira sites",
         free: "1",
         starter: "1",
-        pro: "Unlimited",
+        pro: "1",
         enterprise: "Custom",
       },
       {
         name: "GitHub orgs",
         free: "1",
         starter: "1",
-        pro: "Unlimited",
+        pro: "1",
         enterprise: "Unlimited",
       },
     ],
