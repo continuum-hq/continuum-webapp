@@ -51,9 +51,8 @@ function OpsScrollList({
 }) {
   return (
     <div
-      data-lenis-prevent
       className={cn(
-        "min-h-0 touch-pan-y space-y-2 overflow-y-auto overscroll-y-contain rounded-md pr-1 [-webkit-overflow-scrolling:touch]",
+        "min-h-0 touch-pan-y space-y-2 overflow-y-auto overscroll-y-auto rounded-md pr-1 [-webkit-overflow-scrolling:touch]",
         variant === "tall"
           ? "max-h-[min(55vh,32rem)]"
           : "max-h-[min(50vh,24rem)]",
@@ -1242,10 +1241,7 @@ export default function DashboardOpsPage() {
 
         {assignIssue && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
-            <div
-              data-lenis-prevent
-              className="max-h-[90vh] w-full max-w-md touch-pan-y overflow-y-auto overscroll-y-contain rounded-2xl border border-border bg-background p-5 shadow-xl"
-            >
+            <div className="max-h-[90vh] w-full max-w-md touch-pan-y overflow-y-auto overscroll-y-auto rounded-2xl border border-border bg-background p-5 shadow-xl">
               <h3 className="text-base font-semibold">Confirm Assignment</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Assign <span className="font-medium text-foreground">{assignIssue.key}</span> to:
@@ -1301,10 +1297,7 @@ export default function DashboardOpsPage() {
 
         {githubActionItem && githubActionType && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
-            <div
-              data-lenis-prevent
-              className="max-h-[90vh] w-full max-w-md touch-pan-y overflow-y-auto overscroll-y-contain rounded-2xl border border-border bg-background p-5 shadow-xl"
-            >
+            <div className="max-h-[90vh] w-full max-w-md touch-pan-y overflow-y-auto overscroll-y-auto rounded-2xl border border-border bg-background p-5 shadow-xl">
               <h3 className="text-base font-semibold">
                 {githubActionType === "assign" ? "Assign PR" : "Request PR Review"}
               </h3>
