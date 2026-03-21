@@ -26,6 +26,7 @@ import type {
   IssueHealthResponse,
   OpsFeedResponse,
   UnifiedOpsBriefResponse,
+  UnifiedOpsItem,
   UnifiedOpsResponse,
 } from "@/lib/types/dashboard";
 import { useEffect } from "react";
@@ -36,7 +37,6 @@ import {
   shortRepoLabel,
   splitBriefLines,
 } from "@/lib/ops-format";
-import type { UnifiedOpsItem } from "@/lib/types/dashboard";
 
 function isBlocked(item: DashboardIssueItem) {
   const labels = item.labels || [];
@@ -700,35 +700,33 @@ export default function DashboardOpsPage() {
           </>
         )}
 
-        {!loading && topRiskItems.length > 0 && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-medium">Top Risks</h2>
-              <Badge className="border-border bg-card/40 text-muted-foreground">{topRiskItems.length} prioritized</Badge>
-            </div>
-            <div className="space-y-2">
-              {topRiskItems.map((item) => {
-                const raw = (item.raw || {}) as Record<string, unknown>;
-                const isJira = item.source === "jira";
-                const isGithub = item.source === "github";
-                return (
-                  <div key={`risk-${item.id}`} className="rounded-xl border border-border bg-card/40 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {item.url ? (
-                            <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-                              {item.id}
-                            </a>
-                          ) : (
-                            item.id
-                          )}{" "}
-                          - {item.title}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">{item.subtitle}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Badge className="border-border bg-card/40 text-muted-foreground">{item.source}</Badge>
+        {!loading && (
+          <div className={cn("grid gap-6 lg:gap-8", sidebarVisible ? "lg:grid-cols-12" : "lg:grid-cols-1")}>
+            <div className={cn("space-y-6", sidebarVisible ? "lg:col-span-8" : "lg:col-span-12")}>
+              {topRiskItems.length > 0 && (
+                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-card/40 p-5 shadow-lg ring-1 ring-amber-500/10">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 className="font-serif text-lg font-semibold text-foreground">Top risks</h2>
+                      <p className="text-xs text-muted-foreground">Highest-impact items for the current filter</p>
+                    </div>
+                    <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-100">{topRiskItems.length} prioritized</Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {topRiskItems.map((item) => {
+                      const raw = (item.raw || {}) as Record<string, unknown>;
+                      const isJira = item.source === "jira";
+                      const isGithub = item.source === "github";
+                      return (
+                        <div key={`risk-${item.id}`} className="rounded-xl border border-border/80 bg-card/50 p-4 shadow-sm">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <UnifiedRowHeading item={item} linkUrl={item.url} />
+                              <div className="mt-3 border-t border-border/40 pt-2">
+                                <MetaChips subtitle={item.subtitle} />
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
                         {isJira && (
                           <Button
                             size="sm"
@@ -813,332 +811,363 @@ export default function DashboardOpsPage() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {!loading && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-medium">Unified Activity</h2>
-              <Badge className="border-border bg-card/40 text-muted-foreground">
-                {unifiedActivity.length} ranked events
-              </Badge>
-            </div>
-            {unifiedActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No events for current filter.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {unifiedActivity.map((item) => (
-                  <div key={`unified-${item.id}`} className="rounded-xl border border-border bg-card/40 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {item.url ? (
-                            <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-                              {item.id}
-                            </a>
-                          ) : (
-                            item.id
-                          )}{" "}
-                          - {item.title}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Source: {item.source} | {item.subtitle}
-                        </p>
-                      </div>
-                      <Badge className="border-border bg-card/40 text-muted-foreground">{item.source}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {!loading && health && integrationFilter !== "github" && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="font-medium">Issue Health Brief</h2>
-              <Badge
-                className={cn(
-                  "border",
-                  health.headline.toLowerCase().includes("risk")
-                    ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
-                    : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-                )}
-              >
-                {health.headline.toLowerCase().includes("risk") ? (
-                  <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                ) : (
-                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                )}
-                {health.headline}
-              </Badge>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
-              <div className="rounded-lg border border-border bg-card/40 p-2.5">
-                <p className="text-xs text-muted-foreground">Focus</p>
-                <p className="mt-0.5 text-sky-300 font-semibold">{health.focus_count}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card/40 p-2.5">
-                <p className="text-xs text-muted-foreground">Blockers</p>
-                <p className="mt-0.5 text-red-300 font-semibold">{health.blockers_count}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card/40 p-2.5">
-                <p className="text-xs text-muted-foreground">High Priority</p>
-                <p className="mt-0.5 text-orange-300 font-semibold">{health.high_priority_count}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card/40 p-2.5">
-                <p className="text-xs text-muted-foreground">Owned</p>
-                <p className="mt-0.5 text-emerald-300 font-semibold">{health.ownership.owned}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card/40 p-2.5">
-                <p className="text-xs text-muted-foreground">Unowned</p>
-                <p className="mt-0.5 text-amber-300 font-semibold">{health.ownership.unowned}</p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              {(health.top_items || []).slice(0, 8).map((item) => (
-                <div key={item.key} className="space-y-2">
-                  <IssueRow item={item} />
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-full"
-                      onClick={() => openAssignModal(item)}
-                    >
-                      Assign
-                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!loading && opsFeed && integrationFilter !== "github" && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-medium">Ops Feed</h2>
-              <Badge className="border-border bg-card/40 text-muted-foreground">
-                {opsFeed.items.length} attention events
-              </Badge>
-            </div>
-            {opsFeed.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No urgent events right now. Your issue stream looks stable.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {opsFeed.items.slice(0, 10).map((item) => (
-                  <div key={`feed-${item.key}-${item.event_type}`} className="rounded-xl border border-border bg-card/40 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {item.key} - {item.summary}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Event: {item.event_type.replace("_", " ")} | Owner: {item.assignee || "Unassigned"} | Status: {item.status || "Unknown"}
-                        </p>
-                      </div>
-                      <Button size="sm" variant="outline" className="rounded-full" onClick={() => openAssignModal(item)}>
-                        Assign
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {!loading && githubOps && integrationFilter !== "jira" && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-medium">GitHub PR Ops</h2>
-              <Badge className="border-border bg-card/40 text-muted-foreground">
-                {githubOps.items.length} PR events
-              </Badge>
-            </div>
-            <div className="mb-4 grid gap-2 rounded-xl border border-border bg-card/40 p-3 md:grid-cols-3">
-              <select
-                value={repoSource}
-                onChange={(e) => {
-                  const val = e.target.value as "org" | "personal";
-                  setRepoSource(val);
-                  setSelectedRepo("");
-                  if (val === "org") {
-                    const nextOrg = selectedOrg || githubOrgs[0]?.login || "";
-                    setSelectedOrg(nextOrg);
-                    if (nextOrg) {
-                      void loadReposForOrg(nextOrg);
-                    } else {
-                      setGithubRepos([]);
-                    }
-                  } else {
-                    setSelectedOrg("");
-                    void loadPersonalRepos();
-                  }
-                }}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="org">Organization repos</option>
-                <option value="personal">Personal/all accessible repos</option>
-              </select>
-              <select
-                value={selectedOrg}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedOrg(val);
-                  setSelectedRepo("");
-                  if (val) void loadReposForOrg(val);
-                }}
-                disabled={repoSource !== "org"}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">{repoSource === "org" ? "Select org" : "Org not required"}</option>
-                {githubOrgs.map((o) => (
-                  <option key={o.login} value={o.login}>
-                    {o.name} ({o.login})
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedRepo}
-                onChange={(e) => setSelectedRepo(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select repo</option>
-                {githubRepos.map((r) => (
-                  <option key={r.full_name} value={r.full_name}>
-                    {r.full_name}
-                  </option>
-                ))}
-              </select>
-              <Button onClick={saveGithubRepo} disabled={repoSaving || !selectedRepo}>
-                {repoSaving ? "Saving..." : "Set Default Repo"}
-              </Button>
-              <p className="text-xs text-muted-foreground md:col-span-3">
-                Current default: <span className="text-foreground">{githubConfig?.default_repo || "Not set"}</span>
-              </p>
-              {repoSource === "org" && githubOrgs.length === 0 && (
-                <p className="text-xs text-muted-foreground md:col-span-3">
-                  No orgs visible for this token. Switch to Personal/all accessible repos or reconnect GitHub with org access.
-                </p>
               )}
-            </div>
-            {!githubOps.github_connected ? (
-              <p className="text-sm text-muted-foreground">
-                GitHub is not connected for this workspace.
-              </p>
-            ) : githubOps.error ? (
-              <p className="text-sm text-muted-foreground">
-                {githubOps.error}
-              </p>
-            ) : githubOps.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No PR attention events right now.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {githubOps.items.slice(0, 10).map((item) => (
-                  <div key={`gh-${item.repo}-${item.number}`} className="rounded-xl border border-border bg-card/40 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {item.url ? (
-                            <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-                              {item.repo} #{item.number}
-                            </a>
-                          ) : (
-                            <span>{item.repo} #{item.number}</span>
-                          )}{" "}
-                          - {item.title}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Event: {item.event_type.replace("_", " ")} | Author: {item.author} | Reviewers: {item.requested_reviewers.length || 0} | Assignees: {item.assignees.length || 0}
-                        </p>
+
+              <div className="rounded-2xl border border-cyan-500/15 bg-card/40 p-5 shadow-xl shadow-black/10 ring-1 ring-cyan-500/10">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="font-serif text-lg font-semibold">Unified activity</h2>
+                    <p className="text-xs text-muted-foreground">Ranked events across Jira and GitHub</p>
+                  </div>
+                  <Badge className="border-cyan-500/30 bg-cyan-500/10 text-cyan-100">
+                    {unifiedActivity.length} ranked events
+                  </Badge>
+                </div>
+                {unifiedActivity.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No events for current filter.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {unifiedActivity.map((item) => (
+                      <div key={`unified-${item.id}`} className="rounded-xl border border-border/80 bg-card/50 p-4">
+                        <UnifiedRowHeading item={item} linkUrl={item.url} />
+                        <div className="mt-3 border-t border-border/40 pt-2">
+                          <MetaChips subtitle={`Source: ${item.source} | ${item.subtitle}`} />
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "review")}>
-                          Request review
-                        </Button>
-                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "assign")}>
-                          Assign PR
-                        </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {githubOps && integrationFilter !== "jira" && (
+                <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-card/40 p-5 shadow-lg ring-1 ring-violet-500/10">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 className="font-serif text-lg font-semibold">GitHub PR ops</h2>
+                      <p className="text-xs text-muted-foreground">Pull requests needing attention</p>
+                    </div>
+                    <Badge className="border-violet-500/30 bg-violet-500/10 text-violet-100">
+                      {githubOps.items.length} PR events
+                    </Badge>
+                  </div>
+                  <div className="mb-4 grid gap-2 rounded-xl border border-border/80 bg-card/40 p-3 md:grid-cols-3">
+                    <select
+                      value={repoSource}
+                      onChange={(e) => {
+                        const val = e.target.value as "org" | "personal";
+                        setRepoSource(val);
+                        setSelectedRepo("");
+                        if (val === "org") {
+                          const nextOrg = selectedOrg || githubOrgs[0]?.login || "";
+                          setSelectedOrg(nextOrg);
+                          if (nextOrg) {
+                            void loadReposForOrg(nextOrg);
+                          } else {
+                            setGithubRepos([]);
+                          }
+                        } else {
+                          setSelectedOrg("");
+                          void loadPersonalRepos();
+                        }
+                      }}
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="org">Organization repos</option>
+                      <option value="personal">Personal/all accessible repos</option>
+                    </select>
+                    <select
+                      value={selectedOrg}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedOrg(val);
+                        setSelectedRepo("");
+                        if (val) void loadReposForOrg(val);
+                      }}
+                      disabled={repoSource !== "org"}
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">{repoSource === "org" ? "Select org" : "Org not required"}</option>
+                      {githubOrgs.map((o) => (
+                        <option key={o.login} value={o.login}>
+                          {o.name} ({o.login})
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={selectedRepo}
+                      onChange={(e) => setSelectedRepo(e.target.value)}
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Select repo</option>
+                      {githubRepos.map((r) => (
+                        <option key={r.full_name} value={r.full_name}>
+                          {r.full_name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button onClick={saveGithubRepo} disabled={repoSaving || !selectedRepo}>
+                      {repoSaving ? "Saving..." : "Set Default Repo"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground md:col-span-3">
+                      Current default: <span className="text-foreground">{githubConfig?.default_repo || "Not set"}</span>
+                    </p>
+                    {repoSource === "org" && githubOrgs.length === 0 && (
+                      <p className="text-xs text-muted-foreground md:col-span-3">
+                        No orgs visible for this token. Switch to Personal/all accessible repos or reconnect GitHub with org access.
+                      </p>
+                    )}
+                  </div>
+                  {!githubOps.github_connected ? (
+                    <p className="text-sm text-muted-foreground">GitHub is not connected for this workspace.</p>
+                  ) : githubOps.error ? (
+                    <p className="text-sm text-muted-foreground">{githubOps.error}</p>
+                  ) : githubOps.items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No PR attention events right now.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {githubOps.items.slice(0, 10).map((item) => (
+                        <div key={`gh-${item.repo}-${item.number}`} className="rounded-xl border border-border/80 bg-card/50 p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <SourceBadge source="github" />
+                                {item.url ? (
+                                  <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="font-semibold text-violet-200 underline-offset-2 hover:underline"
+                                  >
+                                    #{item.number}
+                                  </a>
+                                ) : (
+                                  <span className="font-semibold text-violet-200">#{item.number}</span>
+                                )}
+                                <span
+                                  className="max-w-[min(100%,220px)] truncate font-mono text-xs text-muted-foreground"
+                                  title={item.repo}
+                                >
+                                  {shortRepoLabel(item.repo)}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm font-medium text-foreground">{item.title}</p>
+                              <div className="mt-2 border-t border-border/40 pt-2">
+                                <MetaChips subtitle={githubPrMetaLine(item)} />
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                              <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "review")}>
+                                Request review
+                              </Button>
+                              <Button size="sm" variant="outline" className="rounded-full" onClick={() => openGithubModal(item, "assign")}>
+                                Assign PR
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {sidebarVisible && (
+              <aside className="space-y-6 lg:col-span-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:self-start lg:pr-1">
+                {health && integrationFilter !== "github" && (
+                  <div className="rounded-2xl border border-border/80 bg-card/40 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-2">
+                      <h2 className="font-serif text-lg font-semibold">Issue health</h2>
+                      <Badge
+                        className={cn(
+                          "border",
+                          health.headline.toLowerCase().includes("risk")
+                            ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+                            : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                        )}
+                      >
+                        {health.headline.toLowerCase().includes("risk") ? (
+                          <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                        ) : (
+                          <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                        )}
+                        {health.headline}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
+                      <div className="rounded-lg border border-border bg-card/40 p-2.5">
+                        <p className="text-xs text-muted-foreground">Focus</p>
+                        <p className="mt-0.5 font-semibold text-sky-300">{health.focus_count}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-card/40 p-2.5">
+                        <p className="text-xs text-muted-foreground">Blockers</p>
+                        <p className="mt-0.5 font-semibold text-red-300">{health.blockers_count}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-card/40 p-2.5">
+                        <p className="text-xs text-muted-foreground">High Priority</p>
+                        <p className="mt-0.5 font-semibold text-orange-300">{health.high_priority_count}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-card/40 p-2.5">
+                        <p className="text-xs text-muted-foreground">Owned</p>
+                        <p className="mt-0.5 font-semibold text-emerald-300">{health.ownership.owned}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-card/40 p-2.5">
+                        <p className="text-xs text-muted-foreground">Unowned</p>
+                        <p className="mt-0.5 font-semibold text-amber-300">{health.ownership.unowned}</p>
                       </div>
                     </div>
+                    <div className="mt-4 space-y-2">
+                      {(health.top_items || []).slice(0, 8).map((item) => (
+                        <div key={item.key} className="space-y-2">
+                          <IssueRow item={item} />
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full"
+                              onClick={() => openAssignModal(item)}
+                            >
+                              Assign
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                )}
 
-        {!loading && ledger && integrationFilter !== "github" && (
-          <div className="rounded-2xl border border-border bg-card/30 p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-medium">Blocker Ledger</h2>
-              <Badge className="border-red-500/40 bg-red-500/15 text-red-300">
-                {ledger.total} active blockers
-              </Badge>
-            </div>
-            {ledger.total === 0 ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <AlertTriangle className="h-4 w-4" />
-                No blockers detected for this workspace.
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
-                  <h3 className="text-sm font-semibold">Needs owner</h3>
-                  {(ledger.needs_owner || []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No unassigned blockers.</p>
-                  ) : (
-                    (ledger.needs_owner || []).map((item) => (
-                      <div key={`n-${item.key}`} className="space-y-2">
-                        <IssueRow item={item} />
-                        <div className="flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full"
-                            onClick={() => openAssignModal(item)}
-                          >
-                            Assign
-                          </Button>
+                {opsFeed && integrationFilter !== "github" && (
+                  <div className="rounded-2xl border border-border/80 bg-card/40 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-serif text-lg font-semibold">Ops feed</h2>
+                      <Badge className="border-border bg-card/40 text-muted-foreground">
+                        {opsFeed.items.length} attention events
+                      </Badge>
+                    </div>
+                    {opsFeed.items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No urgent events right now. Your issue stream looks stable.
+                      </p>
+                    ) : integrationFilter === "all" ? (
+                      <details className="group rounded-xl border border-border/60 bg-card/30">
+                        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
+                          Show {opsFeed.items.length} attention events (may overlap with activity above)
+                        </summary>
+                        <div className="space-y-2 border-t border-border/50 p-3 pt-2">
+                          {opsFeed.items.slice(0, 10).map((item) => (
+                            <div key={`feed-${item.key}-${item.event_type}`} className="rounded-lg border border-border/60 bg-card/40 p-3">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {item.key} — {item.summary}
+                                  </p>
+                                  <div className="mt-2">
+                                    <MetaChips
+                                      subtitle={`Event: ${eventLabel(item.event_type)} | Owner: ${item.assignee || "Unassigned"} | Status: ${item.status || "Unknown"}`}
+                                    />
+                                  </div>
+                                </div>
+                                <Button size="sm" variant="outline" className="shrink-0 rounded-full" onClick={() => openAssignModal(item)}>
+                                  Assign
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : (
+                      <div className="space-y-2">
+                        {opsFeed.items.slice(0, 10).map((item) => (
+                          <div key={`feed-${item.key}-${item.event_type}`} className="rounded-lg border border-border/60 bg-card/40 p-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground">
+                                  {item.key} — {item.summary}
+                                </p>
+                                <div className="mt-2">
+                                  <MetaChips
+                                    subtitle={`Event: ${eventLabel(item.event_type)} | Owner: ${item.assignee || "Unassigned"} | Status: ${item.status || "Unknown"}`}
+                                  />
+                                </div>
+                              </div>
+                              <Button size="sm" variant="outline" className="shrink-0 rounded-full" onClick={() => openAssignModal(item)}>
+                                Assign
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {ledger && integrationFilter !== "github" && (
+                  <div className="rounded-2xl border border-red-500/15 bg-card/40 p-5 shadow-sm ring-1 ring-red-500/10">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-serif text-lg font-semibold">Blocker ledger</h2>
+                      <Badge className="border-red-500/40 bg-red-500/15 text-red-300">
+                        {ledger.total} active blockers
+                      </Badge>
+                    </div>
+                    {ledger.total === 0 ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <AlertTriangle className="h-4 w-4" />
+                        No blockers detected for this workspace.
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
+                          <h3 className="text-sm font-semibold">Needs owner</h3>
+                          {(ledger.needs_owner || []).length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No unassigned blockers.</p>
+                          ) : (
+                            (ledger.needs_owner || []).map((item) => (
+                              <div key={`n-${item.key}`} className="space-y-2">
+                                <IssueRow item={item} />
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-full"
+                                    onClick={() => openAssignModal(item)}
+                                  >
+                                    Assign
+                                  </Button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
+                          <h3 className="text-sm font-semibold">Assigned blockers</h3>
+                          {(ledger.assigned || []).length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No assigned blockers.</p>
+                          ) : (
+                            (ledger.assigned || []).map((item) => (
+                              <div key={`a-${item.key}`} className="space-y-2">
+                                <IssueRow item={item} />
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-full"
+                                    onClick={() => openAssignModal(item)}
+                                  >
+                                    Reassign
+                                  </Button>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-                <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
-                  <h3 className="text-sm font-semibold">Assigned blockers</h3>
-                  {(ledger.assigned || []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No assigned blockers.</p>
-                  ) : (
-                    (ledger.assigned || []).map((item) => (
-                      <div key={`a-${item.key}`} className="space-y-2">
-                        <IssueRow item={item} />
-                        <div className="flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full"
-                            onClick={() => openAssignModal(item)}
-                          >
-                            Reassign
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+                    )}
+                  </div>
+                )}
+              </aside>
             )}
           </div>
         )}
