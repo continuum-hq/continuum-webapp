@@ -5,9 +5,7 @@ import { useSession } from "next-auth/react";
 import {
   AlertTriangle,
   CheckCircle2,
-  ExternalLink,
   GitBranch,
-  LayoutGrid,
   Loader2,
   ShieldAlert,
   Sparkles,
@@ -38,6 +36,7 @@ import {
   shortRepoLabel,
   splitBriefLines,
 } from "@/lib/ops-format";
+import type { UnifiedOpsItem } from "@/lib/types/dashboard";
 
 function isBlocked(item: DashboardIssueItem) {
   const labels = item.labels || [];
@@ -150,6 +149,54 @@ function SourceBadge({ source }: { source: "jira" | "github" }) {
       <GitBranch className="h-3 w-3" />
       GitHub
     </span>
+  );
+}
+
+function githubPrMetaLine(item: GithubPrOpsResponse["items"][number]) {
+  return `Event: ${eventLabel(item.event_type)} | Author: ${item.author} | Reviewers: ${item.requested_reviewers.length} | Assignees: ${item.assignees.length}`;
+}
+
+/** Compact title line for unified list rows (short repo + PR# or Jira key). */
+function UnifiedRowHeading({
+  item,
+  linkUrl,
+}: {
+  item: UnifiedOpsItem;
+  linkUrl?: string | null;
+}) {
+  const parsed = parseUnifiedId(item.id);
+  const inner =
+    parsed.source === "github" ? (
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="font-mono text-xs text-violet-300/90" title={item.id.replace(/^github:/, "")}>
+          {parsed.secondary}
+        </span>
+        <span className="font-semibold text-foreground">{parsed.primary}</span>
+      </span>
+    ) : (
+      <span className="font-semibold text-sky-200">{parsed.primary}</span>
+    );
+  return (
+    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <SourceBadge source={parsed.source} />
+          {linkUrl ? (
+            <a
+              href={linkUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="min-w-0 underline-offset-2 hover:underline"
+            >
+              {inner}
+            </a>
+          ) : (
+            inner
+          )}
+        </div>
+        <p className="mt-1.5 text-sm font-medium leading-snug text-foreground line-clamp-2">{item.title}</p>
+      </div>
+    </div>
   );
 }
 
@@ -498,46 +545,71 @@ export default function DashboardOpsPage() {
     }
   };
 
+  const sidebarVisible = integrationFilter !== "github";
+
+  const briefDisplayLines = useMemo(() => {
+    const raw = opsBrief?.text?.trim() || "";
+    if (!raw) return ["Daily AI brief is being prepared."];
+    const lines = splitBriefLines(raw);
+    return lines.length ? lines : [raw];
+  }, [opsBrief?.text]);
+
   return (
-    <section className="pb-8">
-      <div className="max-w-5xl space-y-6">
-        <div className="rounded-2xl border border-border/70 bg-card/30 p-5 sm:p-6">
+    <section className="relative min-h-screen overflow-hidden pb-12">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-15%,rgba(99,102,241,0.14),transparent_55%),radial-gradient(ellipse_60%_40%_at_100%_0%,rgba(56,189,248,0.08),transparent)]"
+      />
+      <div className="relative mx-auto max-w-7xl space-y-8 px-4 sm:px-6">
+        <div className="rounded-2xl border border-border/70 bg-card/50 p-5 shadow-xl shadow-black/25 ring-1 ring-white/5 backdrop-blur-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-            <h1 className="font-serif text-2xl font-medium sm:text-3xl">Unified Ops</h1>
-            <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-              Unified command center across Jira and GitHub for blockers, ownership, and merge flow.
-            </p>
-            <div className="mt-3 inline-flex rounded-lg border border-border bg-card/40 p-1">
-              <button
-                type="button"
-                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "all" ? "bg-muted text-foreground" : "text-muted-foreground")}
-                onClick={() => setIntegrationFilter("all")}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "jira" ? "bg-muted text-foreground" : "text-muted-foreground")}
-                onClick={() => setIntegrationFilter("jira")}
-              >
-                Jira
-              </button>
-              <button
-                type="button"
-                className={cn("rounded-md px-3 py-1 text-xs", integrationFilter === "github" ? "bg-muted text-foreground" : "text-muted-foreground")}
-                onClick={() => setIntegrationFilter("github")}
-              >
-                GitHub
-              </button>
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
+                Command center
+              </p>
+              <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight sm:text-3xl">Unified Ops</h1>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">
+                Blockers, ownership, and merge flow across Jira and GitHub—at a glance.
+              </p>
+              <div className="mt-4 inline-flex rounded-xl border border-border/80 bg-muted/30 p-1">
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                    integrationFilter === "all" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setIntegrationFilter("all")}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                    integrationFilter === "jira" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setIntegrationFilter("jira")}
+                >
+                  Jira
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                    integrationFilter === "github" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setIntegrationFilter("github")}
+                >
+                  GitHub
+                </button>
+              </div>
             </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Workspace</label>
+            <div className="w-full sm:w-auto">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Workspace</label>
               <select
                 value={workspaceId ?? ""}
                 onChange={(e) => setWorkspaceId(e.target.value || null)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm sm:min-w-64"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-inner sm:min-w-64"
               >
                 {opsWorkspaces.length === 0 ? (
                   <option value="">No workspace with Jira/GitHub connected</option>
@@ -554,9 +626,9 @@ export default function DashboardOpsPage() {
         </div>
 
         {loading && (
-          <div className="rounded-xl border border-border bg-card/30 p-8 text-center text-muted-foreground">
-            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-            Loading issue ops…
+          <div className="rounded-xl border border-border bg-card/40 p-10 text-center text-muted-foreground">
+            <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-violet-400" />
+            Loading ops data…
           </div>
         )}
 
@@ -567,54 +639,65 @@ export default function DashboardOpsPage() {
         )}
 
         {!loading && (
-          <div className="rounded-xl border border-border bg-card/30 p-4">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-foreground">{opsBrief?.name || "Continuum Ops Brief"}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={refreshOpsBrief}
-                disabled={briefRefreshing || (opsBrief?.refresh_remaining ?? 0) <= 0}
-              >
-                {briefRefreshing ? "Refreshing..." : "Refresh"}
-              </Button>
+          <>
+            <div className="overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-card/60 to-card/30 p-5 shadow-lg ring-1 ring-indigo-500/10 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-200">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Continuum Ops Brief</h2>
+                    <p className="text-xs text-muted-foreground">AI summary — plain language, no duplicate headings</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0 rounded-full"
+                  onClick={refreshOpsBrief}
+                  disabled={briefRefreshing || (opsBrief?.refresh_remaining ?? 0) <= 0}
+                >
+                  {briefRefreshing ? "Refreshing…" : "Refresh"}
+                </Button>
+              </div>
+              <ul className="mt-4 space-y-2.5 border-t border-border/50 pt-4 text-sm leading-relaxed text-foreground/90">
+                {briefDisplayLines.map((line, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-indigo-400/80" aria-hidden />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Generated {opsBrief?.generated_at ? new Date(opsBrief.generated_at).toLocaleString() : "—"} · Refreshes left today:{" "}
+                <span className="font-medium text-foreground">{opsBrief?.refresh_remaining ?? 0}</span>
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {opsBrief?.text || "Daily AI brief is being prepared."}
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Generated: {opsBrief?.generated_at ? new Date(opsBrief.generated_at).toLocaleString() : "—"} | Refreshes left today: {opsBrief?.refresh_remaining ?? 0}
-            </p>
-          </div>
-        )}
 
-        {!loading && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border bg-card/30 p-4">
-              <p className="text-xs text-muted-foreground">Critical Attention</p>
-              <p className="mt-1 text-xl font-semibold text-red-300">{unifiedSummary?.kpis.critical ?? 0}</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-4 ring-1 ring-inset ring-red-500/10">
+                <p className="text-xs font-medium text-muted-foreground">Critical attention</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-red-300">{unifiedSummary?.kpis.critical ?? 0}</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 ring-1 ring-inset ring-amber-500/10">
+                <p className="text-xs font-medium text-muted-foreground">Needs owner</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-amber-300">{unifiedSummary?.kpis.needs_owner ?? 0}</p>
+              </div>
+              <div className="rounded-xl border border-orange-500/25 bg-orange-500/5 p-4 ring-1 ring-inset ring-orange-500/10">
+                <p className="text-xs font-medium text-muted-foreground">Stale</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-orange-300">{unifiedSummary?.kpis.stale ?? 0}</p>
+              </div>
+              <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4 ring-1 ring-inset ring-sky-500/10">
+                <p className="text-xs font-medium text-muted-foreground">High priority</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-sky-300">{unifiedSummary?.kpis.high_priority ?? 0}</p>
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card/30 p-4">
-              <p className="text-xs text-muted-foreground">Needs Owner</p>
-              <p className="mt-1 text-xl font-semibold text-amber-300">{unifiedSummary?.kpis.needs_owner ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card/30 p-4">
-              <p className="text-xs text-muted-foreground">Stale Items</p>
-              <p className="mt-1 text-xl font-semibold text-orange-300">{unifiedSummary?.kpis.stale ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card/30 p-4">
-              <p className="text-xs text-muted-foreground">High Priority</p>
-              <p className="mt-1 text-xl font-semibold text-sky-300">{unifiedSummary?.kpis.high_priority ?? 0}</p>
-            </div>
-          </div>
-        )}
 
-        {!loading && (
-          <div className="rounded-xl border border-border bg-card/30 p-4 text-sm text-muted-foreground">
-            <p>
+            <div className="rounded-xl border border-border/80 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               {unifiedSummary?.insight || "Unified command-center insight will appear here once data is available."}
-            </p>
-          </div>
+            </div>
+          </>
         )}
 
         {!loading && topRiskItems.length > 0 && (
