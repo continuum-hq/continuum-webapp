@@ -174,7 +174,8 @@ export interface GithubOrgsResponse {
 export interface GithubReposResponse {
   workspace_id: string;
   github_connected: boolean;
-  org: string;
+  org?: string | null;
+  source?: "org" | "user" | "none";
   repos: GithubRepo[];
   error?: string | null;
 }

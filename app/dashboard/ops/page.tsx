@@ -145,6 +145,7 @@ export default function DashboardOpsPage() {
   const [githubConfig, setGithubConfig] = useState<GithubOpsConfigResponse | null>(null);
   const [githubOrgs, setGithubOrgs] = useState<GithubOrgsResponse["orgs"]>([]);
   const [githubRepos, setGithubRepos] = useState<GithubReposResponse["repos"]>([]);
+  const [repoSource, setRepoSource] = useState<"org" | "personal">("org");
   const [selectedOrg, setSelectedOrg] = useState("");
   const [selectedRepo, setSelectedRepo] = useState("");
   const [repoSaving, setRepoSaving] = useState(false);
@@ -203,21 +204,20 @@ export default function DashboardOpsPage() {
       setTeamMembers(teamRes.members || []);
       setUnifiedOps(unified);
       setGithubConfig(ghCfg);
-      setGithubOrgs(ghOrgs.orgs || []);
+      const orgs = ghOrgs.orgs || [];
+      setGithubOrgs(orgs);
       const orgFromCfg = (ghCfg.default_repo || "").split("/")[0] || "";
-      const orgFallback = (ghOrgs.orgs || [])[0]?.login || "";
-      const resolvedOrg = orgFromCfg || orgFallback;
+      const orgFallback = orgs[0]?.login || "";
+      const hasOrgMatch = !!orgFromCfg && orgs.some((o) => o.login === orgFromCfg);
+      const resolvedSource: "org" | "personal" = hasOrgMatch || !!orgFallback ? "org" : "personal";
+      setRepoSource(resolvedSource);
+      const resolvedOrg = resolvedSource === "org" ? (orgFromCfg || orgFallback) : "";
       setSelectedOrg(resolvedOrg);
       setSelectedRepo(ghCfg.default_repo || "");
-      if (resolvedOrg) {
-        const reposRes = await apiFetch<GithubReposResponse>(
-          `/dashboard/github/repos?workspace_id=${targetWorkspaceId}&org=${encodeURIComponent(resolvedOrg)}`,
-          {},
-          session.accessToken
-        );
-        setGithubRepos(reposRes.repos || []);
+      if (resolvedSource === "org" && resolvedOrg) {
+        await loadReposForOrg(resolvedOrg, targetWorkspaceId);
       } else {
-        setGithubRepos([]);
+        await loadPersonalRepos(targetWorkspaceId);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load issue ops");
@@ -353,17 +353,34 @@ export default function DashboardOpsPage() {
     }
   };
 
-  const loadReposForOrg = async (orgLogin: string) => {
-    if (!workspaceId || !session?.accessToken || !orgLogin) return;
+  const loadReposForOrg = async (orgLogin: string, targetWorkspaceId?: string) => {
+    const wsId = targetWorkspaceId || workspaceId;
+    if (!wsId || !session?.accessToken || !orgLogin) return;
     try {
       const reposRes = await apiFetch<GithubReposResponse>(
-        `/dashboard/github/repos?workspace_id=${workspaceId}&org=${encodeURIComponent(orgLogin)}`,
+        `/dashboard/github/repos?workspace_id=${wsId}&org=${encodeURIComponent(orgLogin)}`,
         {},
         session.accessToken
       );
       setGithubRepos(reposRes.repos || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load repos");
+      setGithubRepos([]);
+    }
+  };
+
+  const loadPersonalRepos = async (targetWorkspaceId?: string) => {
+    const wsId = targetWorkspaceId || workspaceId;
+    if (!wsId || !session?.accessToken) return;
+    try {
+      const reposRes = await apiFetch<GithubReposResponse>(
+        `/dashboard/github/repos?workspace_id=${wsId}`,
+        {},
+        session.accessToken
+      );
+      setGithubRepos(reposRes.repos || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load personal repos");
       setGithubRepos([]);
     }
   };
@@ -606,16 +623,41 @@ export default function DashboardOpsPage() {
             </div>
             <div className="mb-4 grid gap-2 rounded-xl border border-border bg-card/40 p-3 md:grid-cols-3">
               <select
+                value={repoSource}
+                onChange={(e) => {
+                  const val = e.target.value as "org" | "personal";
+                  setRepoSource(val);
+                  setSelectedRepo("");
+                  if (val === "org") {
+                    const nextOrg = selectedOrg || githubOrgs[0]?.login || "";
+                    setSelectedOrg(nextOrg);
+                    if (nextOrg) {
+                      void loadReposForOrg(nextOrg);
+                    } else {
+                      setGithubRepos([]);
+                    }
+                  } else {
+                    setSelectedOrg("");
+                    void loadPersonalRepos();
+                  }
+                }}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="org">Organization repos</option>
+                <option value="personal">Personal/all accessible repos</option>
+              </select>
+              <select
                 value={selectedOrg}
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedOrg(val);
                   setSelectedRepo("");
-                  void loadReposForOrg(val);
+                  if (val) void loadReposForOrg(val);
                 }}
+                disabled={repoSource !== "org"}
                 className="rounded-md border border-border bg-background px-3 py-2 text-sm"
               >
-                <option value="">Select org</option>
+                <option value="">{repoSource === "org" ? "Select org" : "Org not required"}</option>
                 {githubOrgs.map((o) => (
                   <option key={o.login} value={o.login}>
                     {o.name} ({o.login})
@@ -640,6 +682,11 @@ export default function DashboardOpsPage() {
               <p className="text-xs text-muted-foreground md:col-span-3">
                 Current default: <span className="text-foreground">{githubConfig?.default_repo || "Not set"}</span>
               </p>
+              {repoSource === "org" && githubOrgs.length === 0 && (
+                <p className="text-xs text-muted-foreground md:col-span-3">
+                  No orgs visible for this token. Switch to Personal/all accessible repos or reconnect GitHub with org access.
+                </p>
+              )}
             </div>
             {!githubOps.github_connected ? (
               <p className="text-sm text-muted-foreground">
