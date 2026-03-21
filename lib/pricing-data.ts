@@ -159,6 +159,10 @@ export interface FeatureItem {
 
 export interface FeatureCategory {
   category: string;
+  /** When true, section uses Continuum Ops styling (logo, cyan accent) in the comparison table */
+  highlight?: boolean;
+  /** Shown under category title when highlight is true */
+  categorySubtitle?: string;
   items: FeatureItem[];
 }
 
@@ -216,50 +220,71 @@ export const FEATURE_MATRIX: FeatureCategory[] = [
       {
         name: "Slack workspaces",
         free: "1",
-        starter: "3",
-        pro: "Unlimited",
+        starter: "2",
+        pro: "5",
         enterprise: "Unlimited",
       },
       {
         name: "Requests per day",
         free: "7",
-        starter: "500",
-        pro: "Unlimited",
+        starter: "50",
+        pro: "250",
         enterprise: "Unlimited",
       },
       {
         name: "Messages per thread (memory)",
         free: "10",
-        starter: "30",
-        pro: "100",
+        starter: "20",
+        pro: "50",
         enterprise: "100",
       },
       {
         name: "Knowledge facts (team memory)",
         free: "5",
-        starter: "50",
-        pro: "Unlimited",
+        starter: "15",
+        pro: "75",
         enterprise: "Unlimited",
       },
       {
         name: "Team members",
         free: "1",
-        starter: "15",
-        pro: "Unlimited",
+        starter: "5",
+        pro: "15",
         enterprise: "Unlimited",
       },
       {
         name: "Jira sites",
         free: "1",
         starter: "1",
-        pro: "Unlimited",
+        pro: "1",
         enterprise: "Custom",
       },
       {
         name: "GitHub orgs",
         free: "1",
         starter: "1",
-        pro: "Unlimited",
+        pro: "1",
+        enterprise: "Unlimited",
+      },
+    ],
+  },
+  {
+    category: "Continuum Ops",
+    highlight: true,
+    categorySubtitle: "AI briefs & manual refreshes — scales with your plan",
+    items: [
+      {
+        name: "AI-generated Ops briefs (per user / day)",
+        free: "0",
+        starter: "2",
+        pro: "8",
+        enterprise: "Unlimited",
+      },
+      {
+        name: "Manual Ops brief refreshes (per user / day)",
+        free: "0",
+        starter: "2",
+        pro: "5",
         enterprise: "Unlimited",
       },
     ],

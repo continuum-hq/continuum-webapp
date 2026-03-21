@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Check, Minus } from "lucide-react";
 import { FEATURE_MATRIX, type FeatureValue } from "@/lib/pricing-data";
@@ -52,21 +54,57 @@ export function FeatureComparisonTable() {
           </thead>
           <tbody>
             {FEATURE_MATRIX.map((section, sectionIdx) => (
-              <>
-                <tr key={`section-${sectionIdx}`} className="border-b border-border/50">
-                  <td
-                    colSpan={5}
-                    className="py-3 pt-6 font-medium text-foreground/90 uppercase tracking-wider text-xs"
-                  >
-                    {section.category}
+              <Fragment key={`section-${section.category}-${sectionIdx}`}>
+                <tr
+                  className={cn(
+                    "border-b border-border/50",
+                    section.highlight && "bg-cyan-500/[0.04]"
+                  )}
+                >
+                  <td colSpan={5} className="py-3 pt-6">
+                    {section.highlight ? (
+                      <div className="flex flex-col gap-3 rounded-xl border border-cyan-500/25 bg-linear-to-r from-cyan-500/10 via-background to-violet-500/5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+                        <div className="flex shrink-0 items-center justify-center rounded-lg border border-cyan-500/20 bg-card/50 p-2">
+                          <Image
+                            src="/Continuum_Ops_Logo.png"
+                            alt=""
+                            width={120}
+                            height={40}
+                            className="h-8 w-auto object-contain"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground/95 uppercase tracking-wider text-xs">
+                            {section.category}
+                          </p>
+                          {section.categorySubtitle ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {section.categorySubtitle}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="font-medium text-foreground/90 uppercase tracking-wider text-xs">
+                        {section.category}
+                      </span>
+                    )}
                   </td>
                 </tr>
                 {section.items.map((item, itemIdx) => (
                   <tr
-                    key={`${sectionIdx}-${itemIdx}`}
-                    className="border-b border-border/30 hover:bg-card/30 transition-colors"
+                    key={`${sectionIdx}-${itemIdx}-${item.name}`}
+                    className={cn(
+                      "border-b border-border/30 transition-colors hover:bg-card/30",
+                      section.highlight && "bg-cyan-500/[0.02] hover:bg-cyan-500/[0.06]"
+                    )}
                   >
-                    <td className="py-3 pr-6 text-sm text-muted-foreground">
+                    <td
+                      className={cn(
+                        "py-3 pr-6 text-sm text-muted-foreground",
+                        section.highlight && "font-medium text-cyan-100/90"
+                      )}
+                    >
                       {item.name}
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -91,7 +129,7 @@ export function FeatureComparisonTable() {
                     </td>
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>

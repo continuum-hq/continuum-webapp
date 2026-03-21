@@ -19,8 +19,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/ops", label: "Continuum Ops", icon: Workflow },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/usage", label: "Usage", icon: BarChart3 },
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
   { href: "/dashboard/billing", label: "Billing & Invoices", icon: CreditCard },
