@@ -10,6 +10,31 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const VERCERA_CALLBACK_URL = process.env.VERCERA_CALLBACK_URL;
 const VERCERA_CALLBACK_SECRET = process.env.VERCERA_CALLBACK_SECRET;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function callVerceraWithRetry(payload: unknown): Promise<{ ok: boolean; status: number; text: string }> {
+  if (!VERCERA_CALLBACK_URL || !VERCERA_CALLBACK_SECRET) {
+    return { ok: false, status: 503, text: "Callback not configured" };
+  }
+  let lastStatus = 0;
+  let lastText = "";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const callbackRes = await fetch(VERCERA_CALLBACK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Callback-Secret": VERCERA_CALLBACK_SECRET,
+      },
+      body: JSON.stringify(payload),
+    });
+    const errText = await callbackRes.text().catch(() => "");
+    lastStatus = callbackRes.status;
+    lastText = errText;
+    if (callbackRes.ok) return { ok: true, status: callbackRes.status, text: errText };
+    if (attempt < 3) await sleep(300 * attempt);
+  }
+  return { ok: false, status: lastStatus, text: lastText };
+}
 
 function normalizeHost(host: string): string {
   return host.replace(/^www\./i, "") || host;
@@ -117,23 +142,15 @@ export async function POST(req: NextRequest) {
       additionalInfo: session.additionalInfo || null,
     };
 
-    const callbackRes = await fetch(VERCERA_CALLBACK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Callback-Secret": VERCERA_CALLBACK_SECRET,
-      },
-      body: JSON.stringify(callbackPayload),
-    });
-
-    if (!callbackRes.ok) {
-      const errText = await callbackRes.text();
-      console.error("Vercera callback failed:", callbackRes.status, errText);
+    const callback = await callVerceraWithRetry(callbackPayload);
+    if (!callback.ok) {
+      console.error("Vercera callback failed:", callback.status, callback.text);
       return NextResponse.json(
         {
           error: "Registration callback failed",
-          callbackStatus: callbackRes.status,
-          callbackError: errText.slice(0, 200),
+          callbackStatus: callback.status,
+          callbackError: callback.text.slice(0, 200),
+          note: "Payment may still sync via webhook shortly.",
         },
         { status: 502 },
       );
